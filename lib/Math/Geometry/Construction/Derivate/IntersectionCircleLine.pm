@@ -1,4 +1,4 @@
-package Math::Geometry::Construction::Derivate::IntersectionLineLine;
+package Math::Geometry::Construction::Derivate::IntersectionCircleLine;
 use base 'Math::Geometry::Construction::Derivate';
 use strict;
 use warnings;
@@ -7,12 +7,11 @@ use 5.008008;
 
 use Carp;
 use Math::VectorReal ':all';
-use Math::MatrixReal;
 use Math::Geometry::Construction::TemporaryPoint;
 
 =head1 NAME
 
-C<Math::Geometry::Construction::Derivate::IntersectionLineLine> - line line intersection
+C<Math::Geometry::Construction::Derivate::IntersectionCircleLine> - circle line intersection
 
 =head1 VERSION
 
@@ -37,43 +36,48 @@ our $VERSION = '0.005';
 
 sub points {
     my ($self) = @_;
-    my @lines  = $self->input;
+    my @input  = $self->input;
 
-    croak "Need two lines to intersect" if(@lines != 2);
-    foreach(@lines) {
-	if(!$_->isa('Math::Geometry::Construction::Line')) {
-	    croak sprintf("Need lines for LineLine intersection, no %s",
-			  ref($_));
-	}
+    croak "Need one circle and one line to intersect" if(@input != 2);
+
+    my $circle;
+    my $line;
+    if(eval { $input[0]->isa('Math::Geometry::Construction::Circle') }
+       and
+       eval { $input[1]->isa('Math::Geometry::Construction::Line') })
+    {
+	($circle, $line) = @input;
+    }
+    elsif(eval { $input[0]->isa('Math::Geometry::Construction::Line') }
+	  and
+	  eval { $input[1]->isa('Math::Geometry::Construction::Circle') })
+    {
+	($line, $circle) = @input;
+    }
+    else { croak "Need one circle and one line to intersect"  }
+       
+    my $c_center_p  = $circle->center->position;
+    my $c_support_p = $circle->support->position;
+    my @l_support_p = map { $_->position } $line->support;
+
+    foreach my $_ ($c_center_p, $c_support_p, @l_support_p) {
+	return if(!defined($_));
     }
 
-    # TODO: points might be undefined
-    my @support  = map { [map { $_->position } $_->support] } @lines;
+    my $l_parallel = ($l_support_p[1] - $l_support_p[0])->norm;
+    my $l_normal   = vector(-$l_parallel->y, $l_parallel->x, 0);
+    my $l_constant = $l_normal . $l_support_p[0];
+    my $c_radius   = ($c_support_p - $c_center_p)->length;
 
-    foreach my $line (@support) {
-	foreach my $position (@$line) {
-	    return if(!defined($position));
-	}
-    }
-
-    my @normal   = map { $_->norm }
-	           map { (plane(Z, O, $_->[1] - $_->[0]))[0] } @support;
-    my @constant = map { $normal[$_] . $support[$_]->[0] } (0, 1);
-    my $matrix   = Math::MatrixReal->new_from_rows
-	([map { [$_->x, $_->y] } @normal]);
-
-    return if($matrix->det == 0);
-    my $inverse = $matrix->inverse;
-    return if(!$inverse);  # only possible - if at all - for num. reasons
-
-    my $position = vector($inverse->element(1, 1) * $constant[0] +
-			  $inverse->element(1, 2) * $constant[1],
-			  $inverse->element(2, 1) * $constant[0] +
-			  $inverse->element(2, 2) * $constant[1],
-			  0);
-
-    return(Math::Geometry::Construction::TemporaryPoint->new
-	   (position => $position));
+    my $a   = $l_normal . $c_center_p - $l_constant;
+    my $rad = $c_radius ** 2 - $a ** 2;
+    return if($rad < 0);
+    my $b   = sqrt($rad);
+    
+    my @positions = ($c_center_p - $l_normal * $a + $l_parallel * $b,
+		     $c_center_p - $l_normal * $a - $l_parallel * $b);
+    my $class     = 'Math::Geometry::Construction::TemporaryPoint';
+    return(map { $class->new(position => $_) } @positions);
 }
 
 ###########################################################################

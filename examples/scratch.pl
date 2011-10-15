@@ -3,7 +3,6 @@ use strict;
 use warnings;
 
 use Math::Geometry::Construction;
-use Math::Geometry::Construction::Derivate::IntersectionLineLine;
 use Math::VectorReal;
 use SVG::Rasterize;
 
@@ -19,7 +18,6 @@ sub line {
     my $l1 = $construction->add_line(extend => 50);
     $l1->add_support($p1);
     $l1->add_support($p2);
-    #$l1->style('stroke', 'red');
 }
 
 sub intersection {
@@ -42,9 +40,8 @@ sub intersection {
     $l2->add_support($p3);
     $l2->add_support($p4);
 
-    my $i1 = $construction->add_object
-	('Math::Geometry::Construction::Derivate::IntersectionLineLine',
-	 input => [$l1, $l2]);
+    my $i1 = $construction->add_derivate('IntersectionLineLine',
+					 input => [$l1, $l2]);
     my $p5 = $i1->create_derived_point
 	(point_selector => ['indexed_point', [0]],
 	 label          => 'S',
@@ -52,8 +49,52 @@ sub intersection {
 	 label_offset_y => -5);
 }
 
+sub circle {
+    my $p01 = $construction->add_point('x' => 190, 'y' => 200);
+    my $p02 = $construction->add_point('x' => 190, 'y' => 170, hidden => 1);
+    my $c1  = $construction->add_circle(center  => $p01,
+					support => $p02);
+
+    my $p03 = $construction->add_point('x' => 200, 'y' => 50, hidden => 1);
+    my $p04 = $construction->add_point('x' => 200, 'y' => 60, hidden => 1);
+
+    my $l1 = $construction->add_line(hidden => 1);
+    $l1->add_support($p03);
+    $l1->add_support($p04);
+
+    my $i1 = $construction->add_derivate('IntersectionCircleLine',
+					 input => [$l1, $c1]);
+    my $p05 = $i1->create_derived_point
+	(point_selector => ['indexed_point', [0]],
+	 label          => 'T',
+	 label_offset_x => 5,
+	 label_offset_y => -5);
+    my $p06 = $i1->create_derived_point
+	(point_selector => ['indexed_point', [1]],
+	 label          => 'U',
+	 label_offset_x => 5,
+	 label_offset_y => -5);
+
+    my $p07 = $construction->add_point('x' => 350, 'y' => 200);
+    my $p08 = $construction->add_point('x' => 350, 'y' => 240, hidden => 1);
+    my $c2  = $construction->add_circle(center  => $p07,
+					support => $p08);
+    my $p09 = $construction->add_point('x' => 360, 'y' => 220);
+    my $p10 = $construction->add_point('x' => 360, 'y' => 270, hidden => 1);
+    my $c3  = $construction->add_circle(center  => $p09,
+					support => $p10);
+
+    my $i2 = $construction->add_derivate('IntersectionCircleCircle',
+					 input => [$c2, $c3]);
+    my $p11 = $i2->create_derived_point
+	(point_selector => ['indexed_point', [0]]);
+    my $p12 = $i2->create_derived_point
+	(point_selector => ['indexed_point', [1]]);
+}
+
 line;
 intersection;
+circle;
     
 my $svg = $construction->as_svg(width => 800, height => 300);
     

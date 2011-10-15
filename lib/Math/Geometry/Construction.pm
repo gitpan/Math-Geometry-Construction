@@ -9,6 +9,7 @@ use SVG;
 
 use Math::Geometry::Construction::Point;
 use Math::Geometry::Construction::Line;
+use Math::Geometry::Construction::Circle;
 use Math::Geometry::Construction::DerivedPoint;
 
 =head1 NAME
@@ -17,11 +18,11 @@ C<Math::Geometry::Construction> - intersecting lines and circles
 
 =head1 VERSION
 
-Version 0.004
+Version 0.005
 
 =cut
 
-our $VERSION = '0.004';
+our $VERSION = '0.005';
 
 
 ###########################################################################
@@ -107,6 +108,20 @@ sub add_line {
     return $self->add_object('Math::Geometry::Construction::Line', @args);
 }
 
+sub add_circle {
+    my ($self, @args) = @_;
+
+    return $self->add_object('Math::Geometry::Construction::Circle',
+			     @args);
+}
+
+sub add_derivate {
+    my ($self, $class, @args) = @_;
+
+    return $self->add_object
+	('Math::Geometry::Construction::Derivate::'.$class, @args);
+}
+
 1;
 
 
@@ -117,7 +132,6 @@ __END__
 =head1 SYNOPSIS
 
   use Math::Geometry::Construction;
-  use Math::Geometry::Construction::Derivate::IntersectionLineLine;
 
   my $construction = Math::Geometry::Construction->new
       (width  => 500, height => 300);
@@ -135,9 +149,8 @@ __END__
   $l2->add_support($p3);
   $l2->add_support($p4);
 
-  my $i1 = $construction->add_object
-	('Math::Geometry::Construction::Derivate::IntersectionLineLine',
-	 input => [$l1, $l2]);
+  my $i1 = $construction->add_derivate('IntersectionLineLine',
+                                       input => [$l1, $l2]);
   my $p5 = $i1->create_derived_point
 	(point_selector => ['indexed_point', [0]],
 	 label          => 'S',
@@ -227,26 +240,34 @@ in a finite number of points, it fits into this concept.
 =head2 Output
 
 Each line or similar object holds a number of "points of
-interest". This are - in case of the line - the two points that
+interest". These are - in case of the line - the two points that
 define the line and all intersection points the line is involved
 in. At drawing time, the object determines the most extreme points
 and they define the end points of the drawn line segment. The
 C<extend> attribute allows to extend the line for a given length
 beyond these points because this often looks better. A similar
-concept will be implemented for circles and other objects.
+concept will be implemented for circles, but currently, the full
+circle is drawn.
+
+Currently, the only output format is C<SVG>. I plan to implement
+C<LaTeX> output based on C<PGF/TikZ>, but I will have to learn how
+to use that package first.
+
+Eventually, the output generation should be based on some kind of
+plugin interface that allows to implement other output
+formats. Therefore, everything concerned with output generation is
+particularly prone to future API changes.
 
 =head2 Current Status
 
-At the moment, you can define points and lines, and you can
-intersect lines. Points and lines can have labels. Essentially, the
-whole current functionality is summarized in the
-L<SYNOPSIS|SYNOPSIS>.
+At the moment, you can define points, lines, and circles. You can
+intersect circles and lines with each other. The objects can have
+labels, but the automatic positioning of the labels is very
+primitive and unsatisfactory withouth polishing by the user.
 
 =head2 Next Steps
 
 =over 4
-
-=item * Circles
 
 =item * Extend documentation
 
@@ -267,21 +288,127 @@ L<SYNOPSIS|SYNOPSIS>.
   $construction = Math::Geometry::Construction->new(%args)
 
 Creates a new C<Math::Geometry::Construction> object and initializes
-attributes. This is the default C<Moose|Moose> constructor.
+attributes. This is the default L<Moose|Moose> constructor.
 
 
 =head2 Public Attributes
+
+=head3 width
+
+The width of the visible area.
+
+=head3 height
+
+The height of the visible area.
+
+=head3 objects
+
+A construction holds a hash of the objects it contains. The hash
+itself is inaccessible. However, you can call the following
+accessors:
+
+=over 4
+
+=item * count_objects
+
+Returns the number of objects. For the L<Moose|Moose> aficionado:
+This is the C<count> method of the C<Hash> trait.
+
+=item * object
+
+  $construction->object($key)
+  $construction->object($key, $value)
+
+Accessor/mutator method for single entries of the hash. The keys are
+the object IDs. Usage of the mutator is not intended, use only to
+tamper with the internals at your own risk.
+
+For the L<Moose|Moose> aficionado: This is the C<accessor> method of
+the C<Hash> trait.
+
+=item * object_ids
+
+Returns a (copy of) the list of keys. For the L<Moose|Moose>
+aficionado: This is the C<keys> method of the C<Hash> trait.
+
+=item * objects
+
+Returns a (copy of) the list of values. For the L<Moose|Moose>
+aficionado: This is the C<values> method of the C<Hash> trait.
+
+=back
 
 =head2 Methods
 
 =head3 add_point
 
+  $construction->add_point(%args)
+
+Returns a new
+L<Math::Geometry::Construction::Point|Math::Geometry::Construction::Point>.
+All parameters are handed over to the constructor after adding the
+C<construction> and C<order_index> arguments.
+
 =head3 add_line
+
+  $construction->add_line(%args)
+
+Returns a new
+L<Math::Geometry::Construction::Line|Math::Geometry::Construction::Line>.
+All parameters are handed over to the constructor after adding the
+C<construction> and C<order_index> arguments.
+
+=head3 add_circle
+
+  $construction->add_circle(%args)
+
+Returns a new
+L<Math::Geometry::Construction::Circle|Math::Geometry::Construction::Circle>.
+All parameters are handed over to the constructor after adding the
+C<construction> and C<order_index> arguments.
 
 =head3 add_object
 
+  $construction->add_object($class, %args)
+
+Returns a new instance of the given class. All parameters are handed
+over to the constructor after adding the C<construction> and
+C<order_index> arguments. In fact, L<add_point|add_point>,
+L<add_line|add_line>, and L<add_circle|add_circle> just call this
+method with the appropriate class.
+
+=head3 add_derivate
+
+  $constructor->add_derivate($class, %args)
+
+Convenience shortcut for L<add_object|add_object>. The only
+difference is that C<$class> is prepended with
+C<Math::Geometry::Construction::Derivate::>. Therefore you can call
+
+  $construction->add_derivate('IntersectionCircleLine', %args)
+
+instead of
+
+  $construction->add_object
+      ('Math::Geometry::Construction::Derivate::IntersectionCircleLine', %args)
+
+
 =head3 as_svg
 
+  $construction->as_svg(width => 800, height => 600)
+
+Returns an L<SVG|SVG> object representing the construction. Width
+and height are taken from the L<width|width> and L<height|height>
+attributes. They can be overwritten by the respective parameters.
+
+Draws a white rectangle as background.
+
+Calls the C<as_svg> method on all first on all non-point objects
+then on all C<Point> and C<DerivedPoint> objects. This is because I
+think that points should be drawn on top of lines, circles etc..
+
+Details of this method are likely to change, especially with respect
+to the background rectangle and to width and height.
 
 =head1 DIAGNOSTICS
 
