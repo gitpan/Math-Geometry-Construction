@@ -1,13 +1,11 @@
 package Math::Geometry::Construction::Derivate::IntersectionCircleCircle;
-use base 'Math::Geometry::Construction::Derivate';
-use strict;
-use warnings;
+use Moose;
+extends 'Math::Geometry::Construction::Derivate';
 
 use 5.008008;
 
 use Carp;
 use Math::VectorReal ':all';
-use Math::Geometry::Construction::TemporaryPoint;
 
 =head1 NAME
 
@@ -15,11 +13,11 @@ C<Math::Geometry::Construction::Derivate::IntersectionCircleCircle> - circle cir
 
 =head1 VERSION
 
-Version 0.005
+Version 0.006
 
 =cut
 
-our $VERSION = '0.005';
+our $VERSION = '0.006';
 
 
 ###########################################################################
@@ -34,7 +32,7 @@ our $VERSION = '0.005';
 #                                                                         #
 ###########################################################################
 
-sub points {
+sub positions {
     my ($self)  = @_;
     my @circles = $self->input;
 
@@ -65,11 +63,9 @@ sub points {
     my $rad = $radii[0]**2 - $x**2;
     return if($rad < 0);
 
-    my $y         = sqrt($rad);
-    my @positions = ($center_p[0] + $parallel * $x + $normal * $y,
-		     $center_p[0] + $parallel * $x - $normal * $y);
-    my $class     = 'Math::Geometry::Construction::TemporaryPoint';
-    return(map { $class->new(position => $_) } @positions);
+    my $y = sqrt($rad);
+    return($center_p[0] + $parallel * $x + $normal * $y,
+	   $center_p[0] + $parallel * $x - $normal * $y);
 }
 
 ###########################################################################

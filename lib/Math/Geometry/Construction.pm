@@ -18,11 +18,11 @@ C<Math::Geometry::Construction> - intersecting lines and circles
 
 =head1 VERSION
 
-Version 0.005
+Version 0.006
 
 =cut
 
-our $VERSION = '0.005';
+our $VERSION = '0.006';
 
 
 ###########################################################################
@@ -31,22 +31,17 @@ our $VERSION = '0.005';
 #                                                                         #
 ###########################################################################
 
-has 'objects' => (isa     => 'HashRef[Item]',
-		  is      => 'bare',
-		  traits  => ['Hash'],
-		  default => sub { {} },
-		  handles => {count_objects => 'count',
-			      object        => 'accessor',
-			      object_ids    => 'keys',
-			      objects       => 'values'});
+has 'objects'    => (isa     => 'HashRef[Item]',
+		     is      => 'bare',
+		     traits  => ['Hash'],
+		     default => sub { {} },
+		     handles => {count_objects => 'count',
+				 object        => 'accessor',
+				 object_ids    => 'keys',
+				 objects       => 'values'});
 
-has 'width'   => (isa      => 'Int',
-		  is       => 'rw',
-		  required => 1);
-
-has 'height'  => (isa      => 'Int',
-		  is       => 'rw',
-		  required => 1);
+has 'background' => (isa => 'Str',
+		     is  => 'rw');
 
 ###########################################################################
 #                                                                         #
@@ -56,23 +51,43 @@ has 'height'  => (isa      => 'Int',
 
 sub as_svg {
     my ($self, %args) = @_;
-    my $svg           = SVG->new(width  => $args{width}  || $self->width,
-				 height => $args{height} || $self->height);
-    
-    $svg->rect('x'    => 0,
-	       'y'    => 0,
-	       width  => $self->width,
-	       height => $self->height,
-	       fill   => 'white',
-	       stroke => 'none');
 
+    my $svg = SVG->new(%args);
+
+    # draw background rectangle if possible
+    if(my $bg = $self->background) {
+	my $x;
+	my $y;
+	my $width;
+	my $height;
+	if($args{viewBox}) {
+	    my $f = '[^\s\,]+';
+	    my $w = '(?:\s+|\s*\,\*)';
+	    if($args{viewBox} =~ /^\s*($f)$w($f)$w($f)$w($f)\s*$/) {
+		($x, $y, $width, $height) = ($1, $2, $3, $4);
+	    }
+	    else { warn "Failed to parse viewBox attribute.\n"  }
+	}
+	else {
+	    ($x, $y, $width, $height) =
+		(0, 0, $args{width}, $args{height});
+	}
+	if($width and $height) {
+	    $svg->rect('x' => $x, 'y' => $y,
+		       width => $width, height => $height,
+		       stroke => 'none', fill => $bg);
+	}
+    }
+    
     my @objects = sort { $a->order_index <=> $b->order_index }
         $self->objects;
 
-    foreach(grep { ref($_) !~ /Point$/ } @objects) {
+    my %is_point = ('Math::Geometry::Construction::Point'        => 1,
+		    'Math::Geometry::Construction::DerivedPoint' => 1);
+    foreach(grep { !$is_point{blessed($_)} } @objects) {
 	$_->as_svg(parent => $svg, %args) if($_->can('as_svg'));
     }
-    foreach(grep { ref($_) =~ /Point$/ } @objects) {
+    foreach(grep { $is_point{blessed($_)} } @objects) {
 	$_->as_svg(parent => $svg, %args);
     }
 
@@ -134,28 +149,25 @@ __END__
   use Math::Geometry::Construction;
 
   my $construction = Math::Geometry::Construction->new
-      (width  => 500, height => 300);
+      (background => 'white');
   my $p1 = $construction->add_point('x' => 100, 'y' => 150, hidden => 1);
   my $p2 = $construction->add_point('x' => 120, 'y' => 150, hidden => 1);
   my $p3 = $construction->add_point('x' => 200, 'y' => 50);
   my $p4 = $construction->add_point('x' => 200, 'y' => 250);
 
   my $l1 = $construction->add_line(extend         => 10,
-				     label          => 'g',
-				     label_offset_y => 13);
-  $l1->add_support($p1);
-  $l1->add_support($p2);
-  my $l2 = $construction->add_line;
-  $l2->add_support($p3);
-  $l2->add_support($p4);
+                                   label          => 'g',
+				   label_offset_y => 13,
+				   support        => [$p1, $p2]);
+  my $l2 = $construction->add_line(support => [$p3, $p4]);
 
   my $i1 = $construction->add_derivate('IntersectionLineLine',
                                        input => [$l1, $l2]);
   my $p5 = $i1->create_derived_point
-	(point_selector => ['indexed_point', [0]],
-	 label          => 'S',
-	 label_offset_x => 5,
-	 label_offset_y => -5);
+	(position_selector => ['indexed_position', [0]],
+	 label             => 'S',
+	 label_offset_x    => 5,
+	 label_offset_y    => -5);
 
   print $construction->as_svg(width => 800, height => 300)->xmlify;
 
@@ -293,13 +305,12 @@ attributes. This is the default L<Moose|Moose> constructor.
 
 =head2 Public Attributes
 
-=head3 width
+=head3 background
 
-The width of the visible area.
-
-=head3 height
-
-The height of the visible area.
+By default the background is transparent. This attribute can hold a
+color to hold instead. Possible values depend on the output
+type. For C<SVG>, it can hold any valid C<SVG> color specifier,
+e.g. C<white> or C<rgb(255, 255, 255)>.
 
 =head3 objects
 
@@ -323,18 +334,17 @@ Accessor/mutator method for single entries of the hash. The keys are
 the object IDs. Usage of the mutator is not intended, use only to
 tamper with the internals at your own risk.
 
-For the L<Moose|Moose> aficionado: This is the C<accessor> method of
-the C<Hash> trait.
+This is the C<accessor> method of the C<Hash> trait.
 
 =item * object_ids
 
-Returns a (copy of) the list of keys. For the L<Moose|Moose>
-aficionado: This is the C<keys> method of the C<Hash> trait.
+Returns a (copy of) the list of keys. This is the C<keys> method of
+the C<Hash> trait.
 
 =item * objects
 
-Returns a (copy of) the list of values. For the L<Moose|Moose>
-aficionado: This is the C<values> method of the C<Hash> trait.
+Returns a (copy of) the list of values. This is the C<values> method
+of the C<Hash> trait.
 
 =back
 
@@ -373,15 +383,15 @@ C<construction> and C<order_index> arguments.
 
 Returns a new instance of the given class. All parameters are handed
 over to the constructor after adding the C<construction> and
-C<order_index> arguments. In fact, L<add_point|add_point>,
-L<add_line|add_line>, and L<add_circle|add_circle> just call this
+C<order_index> arguments. In fact, L<add_point|/add_point>,
+L<add_line|/add_line>, and L<add_circle|/add_circle> just call this
 method with the appropriate class.
 
 =head3 add_derivate
 
   $constructor->add_derivate($class, %args)
 
-Convenience shortcut for L<add_object|add_object>. The only
+Convenience shortcut for L<add_object|/add_object>. The only
 difference is that C<$class> is prepended with
 C<Math::Geometry::Construction::Derivate::>. Therefore you can call
 
@@ -395,20 +405,23 @@ instead of
 
 =head3 as_svg
 
-  $construction->as_svg(width => 800, height => 600)
+  $construction->as_svg(%args)
 
-Returns an L<SVG|SVG> object representing the construction. Width
-and height are taken from the L<width|width> and L<height|height>
-attributes. They can be overwritten by the respective parameters.
+Returns an L<SVG|SVG> object representing the construction. All
+parameters are handed over to the L<SVG|SVG> constructor. At least
+C<width> and C<height> should be provided.
 
-Draws a white rectangle as background.
+If a L<background color|/background> is specified then a rectangle
+of of that color is drawn as background. The size is taken from the
+C<viewBox> attribute if specified, from C<width> and C<height>
+otherwise. If none is given, no background is drawn.
 
-Calls the C<as_svg> method on all first on all non-point objects
-then on all C<Point> and C<DerivedPoint> objects. This is because I
-think that points should be drawn on top of lines, circles etc..
+Calls the C<as_svg> method first on all non-point objects, then on
+all C<Point> and C<DerivedPoint> objects. This is because I think
+that points should be drawn on top of lines, circles etc..
 
 Details of this method are likely to change, especially with respect
-to the background rectangle and to width and height.
+to the background.
 
 =head1 DIAGNOSTICS
 

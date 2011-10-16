@@ -1,13 +1,11 @@
 package Math::Geometry::Construction::Derivate::IntersectionCircleLine;
-use base 'Math::Geometry::Construction::Derivate';
-use strict;
-use warnings;
+use Moose;
+extends 'Math::Geometry::Construction::Derivate';
 
 use 5.008008;
 
 use Carp;
 use Math::VectorReal ':all';
-use Math::Geometry::Construction::TemporaryPoint;
 
 =head1 NAME
 
@@ -15,11 +13,11 @@ C<Math::Geometry::Construction::Derivate::IntersectionCircleLine> - circle line 
 
 =head1 VERSION
 
-Version 0.005
+Version 0.006
 
 =cut
 
-our $VERSION = '0.005';
+our $VERSION = '0.006';
 
 
 ###########################################################################
@@ -34,7 +32,7 @@ our $VERSION = '0.005';
 #                                                                         #
 ###########################################################################
 
-sub points {
+sub positions {
     my ($self) = @_;
     my @input  = $self->input;
 
@@ -74,10 +72,8 @@ sub points {
     return if($rad < 0);
     my $b   = sqrt($rad);
     
-    my @positions = ($c_center_p - $l_normal * $a + $l_parallel * $b,
-		     $c_center_p - $l_normal * $a - $l_parallel * $b);
-    my $class     = 'Math::Geometry::Construction::TemporaryPoint';
-    return(map { $class->new(position => $_) } @positions);
+    return($c_center_p - $l_normal * $a + $l_parallel * $b,
+	   $c_center_p - $l_normal * $a - $l_parallel * $b);
 }
 
 ###########################################################################

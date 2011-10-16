@@ -1,14 +1,12 @@
 package Math::Geometry::Construction::Derivate::IntersectionLineLine;
-use base 'Math::Geometry::Construction::Derivate';
-use strict;
-use warnings;
+use Moose;
+extends 'Math::Geometry::Construction::Derivate';
 
 use 5.008008;
 
 use Carp;
 use Math::VectorReal ':all';
 use Math::MatrixReal;
-use Math::Geometry::Construction::TemporaryPoint;
 
 =head1 NAME
 
@@ -16,11 +14,11 @@ C<Math::Geometry::Construction::Derivate::IntersectionLineLine> - line line inte
 
 =head1 VERSION
 
-Version 0.005
+Version 0.006
 
 =cut
 
-our $VERSION = '0.005';
+our $VERSION = '0.006';
 
 
 ###########################################################################
@@ -35,7 +33,7 @@ our $VERSION = '0.005';
 #                                                                         #
 ###########################################################################
 
-sub points {
+sub positions {
     my ($self) = @_;
     my @lines  = $self->input;
 
@@ -47,8 +45,7 @@ sub points {
 	}
     }
 
-    # TODO: points might be undefined
-    my @support  = map { [map { $_->position } $_->support] } @lines;
+    my @support = map { [map { $_->position } $_->support] } @lines;
 
     foreach my $line (@support) {
 	foreach my $position (@$line) {
@@ -66,14 +63,11 @@ sub points {
     my $inverse = $matrix->inverse;
     return if(!$inverse);  # only possible - if at all - for num. reasons
 
-    my $position = vector($inverse->element(1, 1) * $constant[0] +
-			  $inverse->element(1, 2) * $constant[1],
-			  $inverse->element(2, 1) * $constant[0] +
-			  $inverse->element(2, 2) * $constant[1],
-			  0);
-
-    return(Math::Geometry::Construction::TemporaryPoint->new
-	   (position => $position));
+    return(vector($inverse->element(1, 1) * $constant[0] +
+		  $inverse->element(1, 2) * $constant[1],
+		  $inverse->element(2, 1) * $constant[0] +
+		  $inverse->element(2, 2) * $constant[1],
+		  0));
 }
 
 ###########################################################################

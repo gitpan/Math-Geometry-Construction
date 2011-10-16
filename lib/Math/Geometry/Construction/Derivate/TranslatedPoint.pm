@@ -1,21 +1,23 @@
-package Math::Geometry::Construction::PointSelection;
-use Moose::Role;
+package Math::Geometry::Construction::Derivate::TranslatedPoint;
+use Moose;
+extends 'Math::Geometry::Construction::Derivate';
 
 use 5.008008;
 
 use Carp;
+use Math::VectorReal ':all';
 
 =head1 NAME
 
-C<Math::Geometry::Construction::PointSelection> - select point from list
+C<Math::Geometry::Construction::Derivate::TranslatedPoint> - point translated by a given vector
 
 =head1 VERSION
 
-Version 0.003
+Version 0.006
 
 =cut
 
-our $VERSION = '0.003';
+our $VERSION = '0.006';
 
 
 ###########################################################################
@@ -24,8 +26,9 @@ our $VERSION = '0.003';
 #                                                                         #
 ###########################################################################
 
-requires 'id';
-requires 'points';
+has 'translator' => (isa      => 'Item',
+		     is       => 'rw',
+		     required => 1);
 
 ###########################################################################
 #                                                                         #
@@ -33,36 +36,20 @@ requires 'points';
 #                                                                         #
 ###########################################################################
 
-sub indexed_point {
-    my ($self, $index) = @_;
-    my @points         = $self->points;
+sub positions {
+    my ($self) = @_;
+    my @input  = $self->input;
 
-    if(!@points) {
-	warn sprintf("No points to select from in %s.\n", $self->id);
-	return undef;
-    }
-    if($index < 0 or $index >= @points) {
-	warn sprintf("Point index out of range in %s.\n", $self->id);
-	return undef;
+    croak "Need one point" if(@input != 1);
+    if(!$input[0]->can('position')) {
+	croak sprintf("Need something with a position, no %s",
+		      ref($_));
     }
 
-    return($points[$index]);
-}
+    my $position = $input[0]->position;
+    return if(!$position);
 
-sub extreme_point {
-    my ($self, $direction) = @_;
-    my $norm               = $direction / $direction->length;
-    my @points             = grep { defined($_->position) } $self->points;
-
-    if(!@points) {
-	warn sprintf("No points to select from in %s.\n", $self->id);
-	return undef;
-    }
-
-    return((map  { $_->[0] }
-	    sort { $b->[1] <=> $a->[1] }
-	    map  { [$_, $_->position . $norm] }
-	    @points)[0]);
+    return($position + $self->translator);
 }
 
 ###########################################################################
@@ -91,8 +78,6 @@ __END__
 =head2 Methods for Users
 
 =head2 Methods for Subclass Developers
-
-=head3 as_svg
 
 =head1 DIAGNOSTICS
 
