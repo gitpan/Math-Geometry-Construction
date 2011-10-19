@@ -18,11 +18,11 @@ C<Math::Geometry::Construction> - intersecting lines and circles
 
 =head1 VERSION
 
-Version 0.006
+Version 0.007
 
 =cut
 
-our $VERSION = '0.006';
+our $VERSION = '0.007';
 
 
 ###########################################################################
@@ -30,6 +30,9 @@ our $VERSION = '0.006';
 #                               Accessors                                 # 
 #                                                                         #
 ###########################################################################
+
+has 'background' => (isa => 'Str',
+		     is  => 'rw');
 
 has 'objects'    => (isa     => 'HashRef[Item]',
 		     is      => 'bare',
@@ -40,8 +43,12 @@ has 'objects'    => (isa     => 'HashRef[Item]',
 				 object_ids    => 'keys',
 				 objects       => 'values'});
 
-has 'background' => (isa => 'Str',
-		     is  => 'rw');
+has 'output'     => (isa     => 'Item',
+		     is      => 'rw',
+		     writer  => '_output',
+		     handles => {draw_line   => 'line',
+				 draw_circle => 'circle',
+				 draw_text   => 'text'});
 
 ###########################################################################
 #                                                                         #
@@ -49,34 +56,19 @@ has 'background' => (isa => 'Str',
 #                                                                         #
 ###########################################################################
 
-sub as_svg {
-    my ($self, %args) = @_;
+sub draw {
+    my ($self, $type, %args) = @_;
 
-    my $svg = SVG->new(%args);
+    my $class = $type =~ /\:\:/
+	? $type
+	: 'Math::Geometry::Construction::Draw::'.$type;
 
-    # draw background rectangle if possible
+    eval "require $class" or croak "Unable to load output class $class";
+
+    my $output = $self->_output($class->new(%args));
+
     if(my $bg = $self->background) {
-	my $x;
-	my $y;
-	my $width;
-	my $height;
-	if($args{viewBox}) {
-	    my $f = '[^\s\,]+';
-	    my $w = '(?:\s+|\s*\,\*)';
-	    if($args{viewBox} =~ /^\s*($f)$w($f)$w($f)$w($f)\s*$/) {
-		($x, $y, $width, $height) = ($1, $2, $3, $4);
-	    }
-	    else { warn "Failed to parse viewBox attribute.\n"  }
-	}
-	else {
-	    ($x, $y, $width, $height) =
-		(0, 0, $args{width}, $args{height});
-	}
-	if($width and $height) {
-	    $svg->rect('x' => $x, 'y' => $y,
-		       width => $width, height => $height,
-		       stroke => 'none', fill => $bg);
-	}
+	$output->set_background($bg);
     }
     
     my @objects = sort { $a->order_index <=> $b->order_index }
@@ -85,14 +77,16 @@ sub as_svg {
     my %is_point = ('Math::Geometry::Construction::Point'        => 1,
 		    'Math::Geometry::Construction::DerivedPoint' => 1);
     foreach(grep { !$is_point{blessed($_)} } @objects) {
-	$_->as_svg(parent => $svg, %args) if($_->can('as_svg'));
+	$_->draw(output => $output) if($_->can('draw'));
     }
     foreach(grep { $is_point{blessed($_)} } @objects) {
-	$_->as_svg(parent => $svg, %args);
+	$_->draw(output => $output) if($_->can('draw'));
     }
 
-    return $svg;
+    return $output->output;
 }
+
+sub as_svg { return(shift(@_)->draw('SVG', @_)) }
 
 ###########################################################################
 #                                                                         #
@@ -177,6 +171,10 @@ __END__
 This is alpha software. The API is likely to change, input checks
 and documentation are sparse, the test suite barely exists. But
 release early, release often, so here we go.
+
+So far, the development has been fast and focused on adding
+features. On the downside, the code has to be considered
+fragile. Please report any problems you encounter.
 
 =head2 Aims
 
@@ -283,6 +281,8 @@ primitive and unsatisfactory withouth polishing by the user.
 
 =item * Extend documentation
 
+=item * pgf/tikz output
+
 =item * Improve performance
 
 =item * Improve automatic positioning of labels
@@ -348,7 +348,7 @@ of the C<Hash> trait.
 
 =back
 
-=head2 Methods
+=head2 Methods for Users
 
 =head3 add_point
 
@@ -403,25 +403,35 @@ instead of
       ('Math::Geometry::Construction::Derivate::IntersectionCircleLine', %args)
 
 
+=head3 draw
+
+  $construction->draw('SVG', %args)
+
+Draws the construction. The return value depends on the output type
+and might be an object or a stringified version. Currently, the only
+output type is C<SVG>. See L<as_svg|/as_svg>.
+
+If the type does not contain a C<::> then it is prepended by
+C<Math::Geometry::Construction::Draw::> before requiring the module.
+
+Calls the C<draw> method first on all non-point objects, then on
+all C<Point> and C<DerivedPoint> objects. This is because I think
+that points should be drawn on top of lines, circles etc..
+
 =head3 as_svg
 
   $construction->as_svg(%args)
+  $construction->draw('SVG', %args)
 
-Returns an L<SVG|SVG> object representing the construction. All
-parameters are handed over to the L<SVG|SVG> constructor. At least
-C<width> and C<height> should be provided.
+Shortcut for L<draw|/draw>. Returns an L<SVG|SVG> object
+representing the construction. All parameters are handed over to the
+L<SVG|SVG> constructor. At least C<width> and C<height> should be
+provided.
 
 If a L<background color|/background> is specified then a rectangle
 of of that color is drawn as background. The size is taken from the
 C<viewBox> attribute if specified, from C<width> and C<height>
 otherwise. If none is given, no background is drawn.
-
-Calls the C<as_svg> method first on all non-point objects, then on
-all C<Point> and C<DerivedPoint> objects. This is because I think
-that points should be drawn on top of lines, circles etc..
-
-Details of this method are likely to change, especially with respect
-to the background.
 
 =head1 DIAGNOSTICS
 

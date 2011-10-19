@@ -24,4 +24,4 @@ requires:
   Moose::Role: 0
   SVG: 0
   perl: 5.008008
-version: 0.006
+version: 0.007

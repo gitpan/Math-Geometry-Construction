@@ -1,14 +1,13 @@
-package Math::Geometry::Construction::Derivate::TranslatedPoint;
-use Moose;
-extends 'Math::Geometry::Construction::Derivate';
+package Math::Geometry::Construction::Draw;
 
 use 5.008008;
 
+use Moose;
 use Carp;
 
 =head1 NAME
 
-C<Math::Geometry::Construction::Derivate::TranslatedPoint> - point translated by a given vector
+C<Math::Geometry::Construction::Draw> - base class for drawing
 
 =head1 VERSION
 
@@ -21,41 +20,39 @@ our $VERSION = '0.007';
 
 ###########################################################################
 #                                                                         #
+#                      Class Variables and Methods                        # 
+#                                                                         #
+###########################################################################
+
+###########################################################################
+#                                                                         #
 #                               Accessors                                 # 
 #                                                                         #
 ###########################################################################
 
-has 'translator' => (isa      => 'Item',
-		     is       => 'rw',
-		     required => 1);
+has 'output'    => (isa    => 'Item',
+		    is     => 'rw',
+		    writer => '_output');
+
+has 'width'     => (isa      => 'Str',
+		    is       => 'rw');
+
+has 'height'    => (isa      => 'Str',
+		    is       => 'rw');
+
+has 'view_box'  => (isa      => 'ArrayRef[Str]',
+		    is       => 'rw');
 
 ###########################################################################
 #                                                                         #
-#                             Retrieve Data                               #
+#                            Generate Output                              #
 #                                                                         #
 ###########################################################################
 
-sub positions {
-    my ($self) = @_;
-    my @input  = $self->input;
+sub line {}
+sub circle {}
+sub text {}
 
-    croak "Need one point" if(@input != 1);
-    if(!$input[0]->can('position')) {
-	croak sprintf("Need something with a position, no %s",
-		      ref($_));
-    }
-
-    my $position = $input[0]->position;
-    return if(!$position);
-
-    return($position + $self->translator);
-}
-
-###########################################################################
-#                                                                         #
-#                              Change Data                                # 
-#                                                                         #
-###########################################################################
 
 1;
 
@@ -77,6 +74,12 @@ __END__
 =head2 Methods for Users
 
 =head2 Methods for Subclass Developers
+
+=head3 create_derived_point
+
+=head3 as_svg
+
+=head3 id_template
 
 =head1 DIAGNOSTICS
 

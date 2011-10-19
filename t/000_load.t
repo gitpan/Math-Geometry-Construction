@@ -1,6 +1,6 @@
 #!perl -T
 
-use Test::More tests => 7;
+use Test::More tests => 13;
 
 BEGIN {
     use_ok('Math::Geometry::Construction')         || print "Bail out!\n";
@@ -11,7 +11,18 @@ BEGIN {
 	|| print "Bail out!\n";
     use_ok('Math::Geometry::Construction::Derivate::IntersectionLineLine')
 	|| print "Bail out!\n";
+    use_ok('Math::Geometry::Construction::Derivate::IntersectionCircleLine')
+	|| print "Bail out!\n";
+    use_ok('Math::Geometry::Construction::Derivate::IntersectionCircleCircle')
+	|| print "Bail out!\n";
+    use_ok('Math::Geometry::Construction::Derivate::TranslatedPoint')
+	|| print "Bail out!\n";
+    use_ok('Math::Geometry::Construction::Derivate::PointOnLine')
+	|| print "Bail out!\n";
     use_ok('Math::Geometry::Construction::DerivedPoint')
+	|| print "Bail out!\n";
+    use_ok('Math::Geometry::Construction::Draw') || print "Bail out!\n";
+    use_ok('Math::Geometry::Construction::Draw::SVG')
 	|| print "Bail out!\n";
 }
 

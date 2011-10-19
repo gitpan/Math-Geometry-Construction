@@ -1,5 +1,13 @@
 Revision history for Math-Geometry-Construction
 
+0.007	 Wed Oct 19 20:44:11 NZDT 2011
+	 - modified drawing framework in order to prepare it for
+	   different output types than SVG; the method as_svg is now
+	   only an alias for draw("SVG", ...)
+	 - new derivates
+	 - fixed "my $_" that had been introduced by find/replace
+	   and blew smoke tests on Perl 5.8
+
 0.006	 Sun Oct 16 18:38:08 NZDT 2011
 	 - Changed point selection to position selection. This is
 	   less future-safe, but more natural and avoids some

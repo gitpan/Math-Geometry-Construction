@@ -13,11 +13,11 @@ C<Math::Geometry::Construction::Derivate::IntersectionCircleLine> - circle line 
 
 =head1 VERSION
 
-Version 0.006
+Version 0.007
 
 =cut
 
-our $VERSION = '0.006';
+our $VERSION = '0.007';
 
 
 ###########################################################################
@@ -58,10 +58,11 @@ sub positions {
     my $c_support_p = $circle->support->position;
     my @l_support_p = map { $_->position } $line->support;
 
-    foreach my $_ ($c_center_p, $c_support_p, @l_support_p) {
+    foreach($c_center_p, $c_support_p, @l_support_p) {
 	return if(!defined($_));
     }
 
+    # TODO: support points might be equal
     my $l_parallel = ($l_support_p[1] - $l_support_p[0])->norm;
     my $l_normal   = vector(-$l_parallel->y, $l_parallel->x, 0);
     my $l_constant = $l_normal . $l_support_p[0];

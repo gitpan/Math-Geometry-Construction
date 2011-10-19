@@ -14,9 +14,11 @@ lib/Math/Geometry/Construction/Derivate.pm
 lib/Math/Geometry/Construction/Derivate/IntersectionCircleCircle.pm
 lib/Math/Geometry/Construction/Derivate/IntersectionCircleLine.pm
 lib/Math/Geometry/Construction/Derivate/IntersectionLineLine.pm
+lib/Math/Geometry/Construction/Derivate/PointOnLine.pm
 lib/Math/Geometry/Construction/Derivate/TranslatedPoint.pm
 lib/Math/Geometry/Construction/DerivedPoint.pm
-lib/Math/Geometry/Construction/IntersectionPoint.pm
+lib/Math/Geometry/Construction/Draw.pm
+lib/Math/Geometry/Construction/Draw/SVG.pm
 lib/Math/Geometry/Construction/Line.pm
 lib/Math/Geometry/Construction/Object.pm
 lib/Math/Geometry/Construction/Output.pm
