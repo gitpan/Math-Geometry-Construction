@@ -3,8 +3,11 @@ use strict;
 use warnings;
 
 use Math::Geometry::Construction;
+use Math::Geometry::Construction::Derivate::PointOnLine;
+use Math::Geometry::Construction::Derivate::TranslatedPoint;
 use Math::VectorReal;
 use SVG::Rasterize;
+use LaTeX::TikZ;
 
 my $construction = Math::Geometry::Construction->new
     (background => 'white');
@@ -16,7 +19,8 @@ sub line {
 						   fill   => 'blue',
 						   'fill-opacity' => 0.5});
     my $l1 = $construction->add_line(extend  => 50,
-				     support => [$p1, $p2]);
+				     support => [$p1, $p2],
+				     style   => {stroke => 'red'});
 }
 
 sub intersection {
@@ -25,7 +29,7 @@ sub intersection {
     my $p3 = $construction->add_point('x' => 200, 'y' => 50);
     my $p4 = $construction->add_point
 	('x' => 200, 'y' => 250,
-	 label          => "P4",
+	 label          => "P_4",
 	 label_offset_x => 7,
 	 label_offset_y => 10,
 	 label_style    => {'font-family' => 'Helvetica'});
@@ -87,9 +91,37 @@ sub circle {
 	(position_selector => ['indexed_position', [1]]);
 }
 
+sub derivates {
+    my $p01 = $construction->add_point('x' => 450, 'y' => 200);
+    my $p02 = $construction->add_point('x' => 550, 'y' => 220);
+    my $l01 = $construction->add_line(support => [$p01, $p02]);
+
+    my $d01 = $construction->add_derivate('PointOnLine',
+					  input    => [$l01],
+					  quantile => 0.3);
+    my $p03 = $d01->create_derived_point
+	(position_selector => ['indexed_position', [0]]);
+    my $d02 = $construction->add_derivate('PointOnLine',
+					  input => [$l01],
+					  x     => 540);
+    my $p04 = $d02->create_derived_point
+	(position_selector => ['indexed_position', [0]],
+	 style             => {fill => 'blue'});
+
+    my $d03 = $construction->add_derivate
+	('TranslatedPoint',
+	 input      => [$p04],
+	 translator => vector(0, -30, 0));
+    my $p05 = $d03->create_derived_point
+	(position_selector => ['indexed_position', [0]]);
+    my $c01 = $construction->add_circle(center  => $p05,
+					support => $p04);
+}
+
 line;
 intersection;
 circle;
+derivates;
 
 # width/height are on purpose not proportional to those of the
 # construction; this is to show how you can hand over SVG
@@ -104,3 +136,21 @@ print $svg->xmlify, "\n";
 my $rasterize = SVG::Rasterize->new();
 $rasterize->rasterize(svg => $svg);
 $rasterize->write(type => 'png', file_name => 'construction.png');
+
+my $tikz = $construction->draw('TikZ',
+			       width    => 8,
+			       height   => 3,
+			       view_box => [0, 0, 800, 300],
+			       svg_mode => 1);
+my (undef, undef, $body) = Tikz->formatter->render($tikz);
+my $string = sprintf("%s\n", join("\n", @$body));
+print $string;
+
+open(TIKZ, '>', 'construction.tex');
+print TIKZ <<END_OF_TEX;
+\\documentclass{article}
+\\usepackage{tikz}
+\\begin{document}
+$string\\end{document}
+END_OF_TEX
+close(TIKZ);

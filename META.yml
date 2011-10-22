@@ -17,6 +17,7 @@ meta-spec:
 name: Math-Geometry-Construction
 requires:
   Carp: 0
+  LaTeX::TikZ: 0
   List::MoreUtils: 0
   Math::MatrixReal: 0
   Math::VectorReal: 0
@@ -24,4 +25,4 @@ requires:
   Moose::Role: 0
   SVG: 0
   perl: 5.008008
-version: 0.007
+version: 0.008

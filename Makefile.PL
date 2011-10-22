@@ -25,6 +25,7 @@ my %WriteMakefileArgs = (
   "NAME" => "Math::Geometry::Construction",
   "PREREQ_PM" => {
     "Carp" => 0,
+    "LaTeX::TikZ" => 0,
     "List::MoreUtils" => 0,
     "Math::MatrixReal" => 0,
     "Math::VectorReal" => 0,
@@ -32,7 +33,7 @@ my %WriteMakefileArgs = (
     "Moose::Role" => 0,
     "SVG" => 0
   },
-  "VERSION" => "0.007",
+  "VERSION" => "0.008",
   "test" => {
     "TESTS" => "t/*.t"
   }

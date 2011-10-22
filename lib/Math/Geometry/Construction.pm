@@ -18,11 +18,11 @@ C<Math::Geometry::Construction> - intersecting lines and circles
 
 =head1 VERSION
 
-Version 0.007
+Version 0.008
 
 =cut
 
-our $VERSION = '0.007';
+our $VERSION = '0.008';
 
 
 ###########################################################################
@@ -63,6 +63,7 @@ sub draw {
 	? $type
 	: 'Math::Geometry::Construction::Draw::'.$type;
 
+    use Math::Geometry::Construction::Draw::SVG;
     eval "require $class" or croak "Unable to load output class $class";
 
     my $output = $self->_output($class->new(%args));

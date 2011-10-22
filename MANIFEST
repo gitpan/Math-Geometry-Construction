@@ -8,6 +8,7 @@ TODO
 dist.ini
 examples/scratch.pl
 examples/synopsis.pl
+examples/tikz.pl
 lib/Math/Geometry/Construction.pm
 lib/Math/Geometry/Construction/Circle.pm
 lib/Math/Geometry/Construction/Derivate.pm
@@ -19,6 +20,7 @@ lib/Math/Geometry/Construction/Derivate/TranslatedPoint.pm
 lib/Math/Geometry/Construction/DerivedPoint.pm
 lib/Math/Geometry/Construction/Draw.pm
 lib/Math/Geometry/Construction/Draw/SVG.pm
+lib/Math/Geometry/Construction/Draw/TikZ.pm
 lib/Math/Geometry/Construction/Line.pm
 lib/Math/Geometry/Construction/Object.pm
 lib/Math/Geometry/Construction/Output.pm
