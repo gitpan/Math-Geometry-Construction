@@ -25,4 +25,4 @@ requires:
   Moose::Role: 0
   SVG: 0
   perl: 5.008008
-version: 0.008
+version: 0.009

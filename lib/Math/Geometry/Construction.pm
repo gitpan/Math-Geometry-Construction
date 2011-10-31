@@ -7,22 +7,17 @@ use Moose;
 use Math::VectorReal;
 use SVG;
 
-use Math::Geometry::Construction::Point;
-use Math::Geometry::Construction::Line;
-use Math::Geometry::Construction::Circle;
-use Math::Geometry::Construction::DerivedPoint;
-
 =head1 NAME
 
 C<Math::Geometry::Construction> - intersecting lines and circles
 
 =head1 VERSION
 
-Version 0.008
+Version 0.009
 
 =cut
 
-our $VERSION = '0.008';
+our $VERSION = '0.009';
 
 
 ###########################################################################
@@ -87,7 +82,9 @@ sub draw {
     return $output->output;
 }
 
-sub as_svg { return(shift(@_)->draw('SVG', @_)) }
+sub as_svg  { return(shift(@_)->draw('SVG', @_)) }
+
+sub as_tikz { return(shift(@_)->draw('TikZ', @_)) }
 
 ###########################################################################
 #                                                                         #
@@ -97,6 +94,8 @@ sub as_svg { return(shift(@_)->draw('SVG', @_)) }
 
 sub add_object {
     my ($self, $class, @args) = @_;
+
+    eval "require $class" or croak "Unable to load module $class: $!";
 
     my $object = $class->new(order_index  => $self->count_objects, 
 			     construction => $self,
@@ -130,6 +129,13 @@ sub add_derivate {
 
     return $self->add_object
 	('Math::Geometry::Construction::Derivate::'.$class, @args);
+}
+
+sub add_derived_point {
+    my ($self, $class, $derivate_args, $point_args) = @_;
+
+    my $derivate = $self->add_derivate($class, %$derivate_args);
+    return $derivate->create_derived_point(%{$point_args || {}});
 }
 
 1;
@@ -185,9 +191,8 @@ This distribution serves two purposes:
 
 =item * Carrying out geometric constructions like with compass and
 straight edge. You can define points, lines through two points, and
-(in the future) circles around a given center and through a given
-point. You can let these objects intersect to gain new points to
-work with.
+circles around a given center and through a given point. You can let
+these objects intersect to gain new points to work with.
 
 =item * Creating illustrations for geometry. This task is similar to
 the one above, but not the same. For illustrations, the priorities
@@ -222,7 +227,7 @@ intersection point and which the second, so from the user point of
 view the choice is arbitrary. Or, for example, I have come across
 the situation where I needed to double an angle iteratively until it
 becomes larger than a given angle. Impossible in most macro
-languates. With this module, you have Perl as your "macro language".
+languages. With this module, you have Perl as your "macro language".
 
 =back
 
@@ -234,13 +239,13 @@ object that holds the intersecting partners and "knows" how to
 calculate the intersection points. Second, you create a
 L<Math::Geometry::Construction::DerivedPoint|Math::Geometry::Construction::DerivedPoint>
 from the C<Derivate>. The C<DerivedPoint> object holds information
-about which of the intersection points to use. This can be based
+about which of the intersection points to use. This can be based on
 distance to a given point, being the extreme point with respect to a
 given direction etc..
 
 The C<DerivedPoint> object only holds information about how to
-select the right point. Only when you actually ask for the position
-of the point it is actually calculated.
+select the right point. Only when you ask for the position of the
+point it is actually calculated.
 
 The classes are called C<Derivate> and C<DerivedPoint> because this
 concept is applicable beyond the case of intersections. It could,
@@ -249,6 +254,16 @@ three points. Whenever some operation based on given objects results
 in a finite number of points, it fits into this concept.
 
 =head2 Output
+
+=head3 Output Formats
+
+The current output formats are C<SVG> and C<TikZ>. Especially the
+latter one is experimental and the interface might change in future
+versions. Other output engines could be written by subclassing
+L<Math::Geometry::Construction::Draw|Math::Geometry::Construction::Draw>.
+However, documentation of the interface is not available, yet.
+
+=head3 How much to draw?
 
 Each line or similar object holds a number of "points of
 interest". These are - in case of the line - the two points that
@@ -259,15 +274,6 @@ C<extend> attribute allows to extend the line for a given length
 beyond these points because this often looks better. A similar
 concept will be implemented for circles, but currently, the full
 circle is drawn.
-
-Currently, the only output format is C<SVG>. I plan to implement
-C<LaTeX> output based on C<PGF/TikZ>, but I will have to learn how
-to use that package first.
-
-Eventually, the output generation should be based on some kind of
-plugin interface that allows to implement other output
-formats. Therefore, everything concerned with output generation is
-particularly prone to future API changes.
 
 =head2 Current Status
 
@@ -281,8 +287,6 @@ primitive and unsatisfactory withouth polishing by the user.
 =over 4
 
 =item * Extend documentation
-
-=item * pgf/tikz output
 
 =item * Improve performance
 
@@ -309,9 +313,10 @@ attributes. This is the default L<Moose|Moose> constructor.
 =head3 background
 
 By default the background is transparent. This attribute can hold a
-color to hold instead. Possible values depend on the output
+color to be used instead. Possible values depend on the output
 type. For C<SVG>, it can hold any valid C<SVG> color specifier,
-e.g. C<white> or C<rgb(255, 255, 255)>.
+e.g. C<white> or C<rgb(255, 255, 255)>. C<TikZ> currently ignores
+the C<background> attribute.
 
 =head3 objects
 
@@ -360,6 +365,11 @@ L<Math::Geometry::Construction::Point|Math::Geometry::Construction::Point>.
 All parameters are handed over to the constructor after adding the
 C<construction> and C<order_index> arguments.
 
+Example:
+
+  $construction->add_point('x' => 10, 'y' => 20,
+                           style => {stroke => 'red'});
+
 =head3 add_line
 
   $construction->add_line(%args)
@@ -369,6 +379,11 @@ L<Math::Geometry::Construction::Line|Math::Geometry::Construction::Line>.
 All parameters are handed over to the constructor after adding the
 C<construction> and C<order_index> arguments.
 
+Example:
+
+  $construction->add_line(support => [$point1, $point2],
+                          extend  => 10);
+
 =head3 add_circle
 
   $construction->add_circle(%args)
@@ -377,6 +392,11 @@ Returns a new
 L<Math::Geometry::Construction::Circle|Math::Geometry::Construction::Circle>.
 All parameters are handed over to the constructor after adding the
 C<construction> and C<order_index> arguments.
+
+Example:
+
+  $construction->add_circle(center  => $point1,
+                            support => $point1);
 
 =head3 add_object
 
@@ -390,7 +410,7 @@ method with the appropriate class.
 
 =head3 add_derivate
 
-  $constructor->add_derivate($class, %args)
+  $construction->add_derivate($class, %args)
 
 Convenience shortcut for L<add_object|/add_object>. The only
 difference is that C<$class> is prepended with
@@ -403,6 +423,76 @@ instead of
   $construction->add_object
       ('Math::Geometry::Construction::Derivate::IntersectionCircleLine', %args)
 
+
+Example:
+
+  $construction->add_derivate('TranslatedPoint',
+                              input      => [$point1],
+                              translator => vector(10, -20, 0));
+
+=head3 add_derived_point
+
+  $construction->add_derived_point($class, $derivate_args, $point_args)
+
+Combines the creation of a C<Derivate> object and a C<DerivedPoint>
+object in one step. This is particularly useful if the derivate only
+holds one point, e.g. the intersection of two lines, a translated
+point, a point on a line etc..
+
+The method expects three parameters:
+
+=over 4
+
+=item 1. the derivate class
+
+=item 2. a hash reference with arguments for the constructor of
+L<Math::Geometry::Construction::Derivate|Math::Geometry::Construction::Derivate>
+
+=item 3. a hash reference with arguments for the constructor of
+L<Math::Geometry::Construction::DerivedPoint|Math::Geometry::Construction::DerivedPoint>; this argument is optional, if not defined it is replaced by an empty hash reference
+
+=back
+
+Returns the C<DerivedPoint> object.
+
+Example:
+
+  $derived_point = $construction->add_derived_point
+      ('IntersectionLineLine',
+       {input      => [$line1, $line2]},
+       {position_selector => ['indexed_point', [0]]});
+
+In this example, the last hash reference can be omitted:
+
+  $derived_point = $construction->add_derived_point
+      ('IntersectionLineLine', {input => [$line1, $line2]});
+
+The missing hash reference is replaced by an empty hash reference,
+and the constructor of the C<DerivedPoint> object uses the default
+position selector C<['indexed_point', [0]]>.
+
+If multiple derived points based on the same derivative are desired
+then the third argument for C<add_derived_point> can be replaced by
+the reference to an array of hash references each of which holds the
+parameters for one of the points. A list of C<DerivedPoint> objects
+is returned.
+
+Example:
+
+  use Math::VectorReal;
+
+  @derived_points = $construction->add_derived_point
+      ('IntersectionCircleLine',
+       {input      => [$circle, $line]},
+       [{position_selector => ['extreme_point', [vector(0, -1, 0)]]},
+        {position_selector => ['extreme_point', [vector(0,  1, 0)]]}]);
+
+In this case, we ask for the two intersection points between a
+circle and a line. The C<extreme_point> position selector will give
+as the most extreme of the intersection points in the given
+direction. Therefore, in C<SVG> coordinates, C<$derived_points[0]>
+will hold the "northern", C<$derived_points[1]> the "southern"
+intersection point.
 
 =head3 draw
 
@@ -433,6 +523,19 @@ If a L<background color|/background> is specified then a rectangle
 of of that color is drawn as background. The size is taken from the
 C<viewBox> attribute if specified, from C<width> and C<height>
 otherwise. If none is given, no background is drawn.
+
+=head3 as_tikz
+
+  $construction->as_tikz(%args)
+  $construction->draw('TikZ', %args)
+
+Shortcut for L<draw|/draw>. Returns an L<LaTeX|LaTeX> sequence
+object representing the construction. See
+L<Math::Geometry::Construction::Draw|Math::Geometry::Construction::Draw>
+and
+L<Math::Geometry::Construction::Draw::TikZ|Math::Geometry::Construction::Draw::TikZ>
+for supported parameters. At least C<width> and C<height> should be
+provided.
 
 =head1 DIAGNOSTICS
 

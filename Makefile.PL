@@ -33,7 +33,7 @@ my %WriteMakefileArgs = (
     "Moose::Role" => 0,
     "SVG" => 0
   },
-  "VERSION" => "0.008",
+  "VERSION" => "0.009",
   "test" => {
     "TESTS" => "t/*.t"
   }

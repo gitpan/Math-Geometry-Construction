@@ -12,11 +12,11 @@ C<Math::Geometry::Construction::DerivedPoint> - point derived from other objects
 
 =head1 VERSION
 
-Version 0.007
+Version 0.009
 
 =cut
 
-our $VERSION = '0.007';
+our $VERSION = '0.009';
 
 
 ###########################################################################
@@ -45,6 +45,7 @@ has 'derivate'          => (isa      => 'Item',
 has 'position_selector' => (isa      => 'ArrayRef[Item]',
 			    is       => 'ro',
 			    reader   => '_position_selector',
+			    default  => sub { ['indexed_position', [0]] },
 			    required => 1);
 
 has 'radius'            => (isa     => 'Num',
