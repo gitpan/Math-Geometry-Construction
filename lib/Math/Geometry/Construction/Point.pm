@@ -12,11 +12,11 @@ C<Math::Geometry::Construction::Point> - a free user-defined point
 
 =head1 VERSION
 
-Version 0.009
+Version 0.010
 
 =cut
 
-our $VERSION = '0.009';
+our $VERSION = '0.010';
 
 
 ###########################################################################
@@ -60,6 +60,11 @@ sub _radius_trigger {
 sub BUILDARGS {
     my ($class, %args) = @_;
 
+    if(defined($args{position}) and ref($args{position}) eq 'ARRAY') {
+	$args{position} = vector($args{position}->[0],
+				 $args{position}->[1],
+				 $args{position}->[2] || 0);
+    }
     if(defined($args{x}) and defined($args{y})) {
 	$args{position} = vector($args{x}, $args{y}, $args{z} || 0);
     }
@@ -143,22 +148,33 @@ C<Math::Geometry::Construction>.
 
 Holds a L<Math::VectorReal|Math::VectorReal> object with the
 position of the point. The C<z> position is expected to be C<0>. As
-initialization arguments to the constructor, you can give C<x> and
-C<y> with numerical values instead of position with a
-C<Math::VectorReal> value. The object is then created by the
-constructor.
+initialization argument to the constructor, you can also give an
+array reference instead of a C<Math::VectorReal> object. The object
+is then created by the constructor. The C<z> value is optional.
+
+Example:
+
+  $construction->add_point(position => [1, 4]);
+
+Note that the conversion of a array reference is only done at
+construction time (at least currently). If you want to change the
+position later you have to provide a
+L<Math::VectorReal|Math::VectorReal> object.
 
 =head3 size
 
 A point is currently always drawn as a circle. This might become
 more flexible in the future. C<size> determines the size of the
-point in the output. For a circle it is its diameter.
+point in the output. For a circle it is its diameter. This parameter
+is currently C<undef> by default, because the output falls back to
+L<radius|/radius> (see below). When C<radius> is removed, C<size>
+will default to C<6>.
 
 =head3 radius
 
 This attribute is deprecated and might be removed in a future
 version. If L<size|/size> is not set then this attribute determines
-the radius of the output circle.
+the radius of the output circle. Defaults to C<3>.
 
 =head2 General Output Attributes
 
