@@ -28,6 +28,8 @@ lib/Math/Geometry/Construction/Point.pm
 lib/Math/Geometry/Construction/PositionSelection.pm
 t/000_load.t
 t/005_basic_interface.t
+t/010_derivates.t
+t/015_position_selectors.t
 t/700_boilerplate.t
 t/705_manifest.t
 t/release-pod-coverage.t

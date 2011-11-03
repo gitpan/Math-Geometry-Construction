@@ -4,6 +4,7 @@ use Moose;
 use 5.008008;
 
 use Carp;
+use Scalar::Util qw(blessed);
 
 use Math::Geometry::Construction::Derivate::IntersectionCircleCircle;
 use Math::Geometry::Construction::Derivate::IntersectionCircleLine;
@@ -14,11 +15,11 @@ C<Math::Geometry::Construction::Circle> - circle by center and point
 
 =head1 VERSION
 
-Version 0.010
+Version 0.011
 
 =cut
 
-our $VERSION = '0.010';
+our $VERSION = '0.011';
 
 
 ###########################################################################
@@ -55,6 +56,12 @@ has 'extend'  => (isa     => 'Num',
 
 sub BUILDARGS {
     my ($class, %args) = @_;
+    
+    if(!blessed($args{center})) {
+	$args{center} = $args{construction}->add_point
+	    (position => $args{center},
+	     hidden   => 1);
+    }
 
     if(exists($args{radius})) {
 	$args{support} = $args{construction}->add_derived_point
@@ -63,6 +70,12 @@ sub BUILDARGS {
 	      translator => [$args{radius}, 0]},
 	     {hidden     => 1});
 	delete $args{radius};
+    }
+
+    if(!blessed($args{support})) {
+	$args{support} = $args{construction}->add_point
+	    (position => $args{support},
+	     hidden   => 1);
     }
 
     return \%args;

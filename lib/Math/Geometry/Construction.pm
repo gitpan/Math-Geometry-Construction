@@ -6,6 +6,7 @@ use Carp;
 use Moose;
 use Math::VectorReal;
 use SVG;
+use MooseX::Params::Validate;
 
 =head1 NAME
 
@@ -13,11 +14,11 @@ C<Math::Geometry::Construction> - intersecting lines and circles
 
 =head1 VERSION
 
-Version 0.010
+Version 0.011
 
 =cut
 
-our $VERSION = '0.010';
+our $VERSION = '0.011';
 
 
 ###########################################################################
@@ -53,6 +54,8 @@ has 'output'     => (isa     => 'Item',
 
 sub draw {
     my ($self, $type, %args) = @_;
+
+    ($type) = pos_validated_list([$type], {isa => 'Str'});
 
     my $class = $type =~ /\:\:/
 	? $type
@@ -140,7 +143,14 @@ sub add_derived_point {
     my ($self, $class, $derivate_args, $point_args) = @_;
 
     my $derivate = $self->add_derivate($class, %$derivate_args);
-    return $derivate->create_derived_point(%{$point_args || {}});
+    
+    if(!defined($point_args) or ref($point_args) eq 'HASH') {
+	return $derivate->create_derived_point(%{$point_args || {}});
+    }
+    else {
+	return(map { $derivate->create_derived_point(%{$_ || {}}) }
+	       @$point_args);
+    }
 }
 
 1;
@@ -163,17 +173,23 @@ __END__
 
   my $l1 = $construction->add_line(extend         => 10,
                                    label          => 'g',
-				   label_offset_y => 13,
-				   support        => [$p1, $p2]);
+                                   label_offset_y => 13,
+                                   support        => [$p1, $p2]);
   my $l2 = $construction->add_line(support => [$p3, $p4]);
 
   my $i1 = $construction->add_derivate('IntersectionLineLine',
                                        input => [$l1, $l2]);
-  my $p5 = $i1->create_derived_point
-	(position_selector => ['indexed_position', [0]],
-	 label             => 'S',
-	 label_offset_x    => 5,
-	 label_offset_y    => -5);
+  my $p5 = $i1->create_derived_point(label          => 'S',
+                                     label_offset_x => 5,
+                                     label_offset_y => -5);
+
+  my $c1 = $construction->add_circle(center => $p5, radius => 20);
+
+  # an intersection point can also be generated in one go
+  my $p6 = $construction->add_derived_point
+      ('IntersectionCircleLine',
+       {input => [$l1, $c1]},
+       {position_selector => ['extreme_position', [[1, 0]]]});
 
   print $construction->as_svg(width => 800, height => 300)->xmlify;
 
@@ -370,10 +386,15 @@ L<Math::Geometry::Construction::Point|Math::Geometry::Construction::Point>.
 All parameters are handed over to the constructor after adding the
 C<construction> and C<order_index> arguments.
 
-Example:
+Examples:
 
-  $construction->add_point('x' => 10, 'y' => 20,
+  $construction->add_point(position => [10, 20]);
+  $construction->add_point('x' => 50, 'y' => 30,
                            style => {stroke => 'red'});
+
+  # requires 'use Math::VectorReal' in this package
+  $construction->add_point(position => vector(-15, 23, 0),
+                           hidden   => 1);
 
 =head3 add_line
 
@@ -398,10 +419,19 @@ L<Math::Geometry::Construction::Circle|Math::Geometry::Construction::Circle>.
 All parameters are handed over to the constructor after adding the
 C<construction> and C<order_index> arguments.
 
-Example:
+The "standard" circle requires the center and a point "support"
+point on its perimeter. However, you can provide a radius instead of
+the support point, and the constructor of
+L<Math::Geometry::Construction::Circle|Math::Geometry::Construction::Circle>
+will create a support point under the hood. Even if you move the
+center later on, the radius of the circle will stay constant.
+
+Examples:
 
   $construction->add_circle(center  => $point1,
-                            support => $point1);
+                            support => $point2);
+  $construction->add_circle(center  => $point1,
+                            radius  => 50);
 
 =head3 add_object
 
@@ -464,7 +494,7 @@ Example:
 
   $derived_point = $construction->add_derived_point
       ('IntersectionLineLine',
-       {input      => [$line1, $line2]},
+       {input => [$line1, $line2]},
        {position_selector => ['indexed_point', [0]]});
 
 In this example, the last hash reference can be omitted:
@@ -484,13 +514,11 @@ is returned.
 
 Example:
 
-  use Math::VectorReal;
-
   @derived_points = $construction->add_derived_point
       ('IntersectionCircleLine',
-       {input      => [$circle, $line]},
-       [{position_selector => ['extreme_point', [vector(0, -1, 0)]]},
-        {position_selector => ['extreme_point', [vector(0,  1, 0)]]}]);
+       {input => [$circle, $line]},
+       [{position_selector => ['extreme_point', [[0, -1]]]},
+        {position_selector => ['extreme_point', [[0,  1]]]}]);
 
 In this case, we ask for the two intersection points between a
 circle and a line. The C<extreme_point> position selector will give
@@ -505,7 +533,8 @@ intersection point.
 
 Draws the construction. The return value depends on the output type
 and might be an object or a stringified version. Currently, the only
-output type is C<SVG>. See L<as_svg|/as_svg>.
+output types are C<SVG> and C<TikZ>. See L<as_svg|/as_svg> and
+L<as_tikz|/as_tikz>.
 
 If the type does not contain a C<::> then it is prepended by
 C<Math::Geometry::Construction::Draw::> before requiring the module.
@@ -534,8 +563,8 @@ otherwise. If none is given, no background is drawn.
   $construction->as_tikz(%args)
   $construction->draw('TikZ', %args)
 
-Shortcut for L<draw|/draw>. Returns an L<LaTeX|LaTeX> sequence
-object representing the construction. See
+Shortcut for L<draw|/draw>. Returns an L<LaTeX::TikZ|LaTeX::TikZ>
+sequence object representing the construction. See
 L<Math::Geometry::Construction::Draw|Math::Geometry::Construction::Draw>
 and
 L<Math::Geometry::Construction::Draw::TikZ|Math::Geometry::Construction::Draw::TikZ>
@@ -546,7 +575,118 @@ provided.
 
 =head2 Exceptions
 
+Currently, C<Math::Geometry::Construction> does not use any advanced
+exception framework, it just croaks if it is unhappy. The error
+messages are listed below in alphabetical order.
+
+=over 4
+
+=item * Class name %s did not pass regex check
+
+=item * Need circles for CircleCircle intersection, no %s
+
+=item * Need one circle and one line to intersect
+
+The C<input> for circle line intersection has to be exactly one
+L<Math::Geometry::Construction::Circle|Math::Geometry::Construction::Circle>
+(or subclass) object and one
+L<Math::Geometry::Construction::Line|Math::Geometry::Construction::Line>
+(or subclass) object. This exception is thrown in all other
+cases. It might be split into more specific exceptions in the
+future. The exception is thrown only when the positions of the
+intersections are calculated.
+
+=item * Need lines for LineLine intersection, no %s
+
+The C<input> for line line intersection has to consist of exactly
+two
+L<Math::Geometry::Construction::Line|Math::Geometry::Construction::Line>
+(or subclass) objects. If the correct number of items is given, but
+one of them is of an incorrect type then this exception is thrown.
+
+=item * Need one line for PointOnLine"
+
+=item * Need one point
+
+=item * Need something with a position, no %s
+
+=item * Need two circles to intersect
+
+=item * Need two lines to intersect
+
+The C<input> for line line intersection has to consist of exactly
+two
+L<Math::Geometry::Construction::Line|Math::Geometry::Construction::Line>
+(or subclass) objects. If the wrong number of C<input> items
+(ignoring their values) is given then this exception is thrown. The
+exception is thrown only when the position of the intersection is
+calculated.
+
+=item * No way to determine position of PointOnLine %s
+
+=item * Position of PointOnLine has to be set somehow
+
+When constructing a
+L<Math::Geometry::Construction::Derivate::PointOnLine|Math::Geometry::Construction::Derivate::PointOnLine>
+object, one of the attributes C<distance>, C<quantile>, C<x>, and
+C<y> has to be specified. Otherwise this exception is thrown.
+
+=item * Unable to load module %s: %s
+
+=item * Undefined direction in 'extreme_position' selector
+
+The C<extreme_position> position selector expects a direction
+vector. This exception is raised if the provided direction is
+undefined.
+
+=item * Undefined index in 'indexed_position' selector"
+
+The C<indexed_position> position selector expects an index. This
+exception is raised if the provided index is undefined.
+
+=item * Undefined reference position in '%s' selector
+
+The C<close_position> and C<distant_position> position selectors
+expect a reference position. This exception is raised if the
+provided reference is undefined.
+
+=back
+
+
 =head2 Warnings
+
+=over 4
+
+=item * A line needs two support points, skipping.
+
+=item * Failed to parse viewBox attribute.
+
+=item * No positions to select from in %s.
+
+This warning is issued by the position selectors if there is are no
+positions. For example, if you are using an intersection point of
+two circles, but the circles do not intersect. The position selector
+will print this warning and return undef. Your downstream code must
+be able to handle undefined positions.
+
+=item * Position index out of range in %s.
+
+=item * The 'radius' attribute of
+Math::Geometry::Construction::Point is deprecated and might be
+removed in a future version. Use 'size' with the double
+value (diameter of the circle) instead.
+
+I think this message speaks for itself :-).
+
+=item * Undefined center of circle %s, nothing to draw.
+
+=item * Undefined position of derived point %s, nothing to draw.
+
+=item * Undefined support of circle %s, nothing to draw.
+
+=item * Undefined support point in line %s, nothing to draw.
+
+=back
 
 
 =head1 BUGS AND LIMITATIONS
@@ -573,7 +713,6 @@ under the terms of either: the GNU General Public License as published
 by the Free Software Foundation; or the Artistic License.
 
 See http://dev.perl.org/licenses/ for more information.
-
 
 =cut
 

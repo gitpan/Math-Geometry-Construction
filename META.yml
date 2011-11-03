@@ -3,6 +3,7 @@ abstract: 'intersecting lines and circles'
 author:
   - 'Lutz Gehlen <perl@lutzgehlen.de>'
 build_requires:
+  List::Util: 0
   Test::More: 0
   strict: 0
   warnings: 0
@@ -23,6 +24,8 @@ requires:
   Math::VectorReal: 0
   Moose: 0
   Moose::Role: 0
+  MooseX::Params::Validate: 0
   SVG: 0
+  Scalar::Util: 0
   perl: 5.008008
-version: 0.010
+version: 0.011

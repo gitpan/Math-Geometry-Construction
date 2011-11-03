@@ -12,11 +12,11 @@ C<Math::Geometry::Construction::PositionSelection> - select position from list
 
 =head1 VERSION
 
-Version 0.010
+Version 0.011
 
 =cut
 
-our $VERSION = '0.010';
+our $VERSION = '0.011';
 
 
 ###########################################################################
@@ -38,6 +38,9 @@ sub indexed_position {
     my ($self, $index) = @_;
     my @positions      = grep { defined($_) } $self->positions;
 
+    croak "Undefined index in 'indexed_position' selector"
+	if(!defined($index));
+    
     if(!@positions) {
 	warn sprintf("No positions to select from in %s.\n", $self->id);
 	return undef;
@@ -52,6 +55,9 @@ sub indexed_position {
 
 sub extreme_position {
     my ($self, $direction) = @_;
+    
+    croak "Undefined direction in 'extreme_position' selector"
+	if(!defined($direction));
     
     if(ref($direction) eq 'ARRAY') {
 	$direction = vector($direction->[0],
@@ -70,6 +76,56 @@ sub extreme_position {
     return((map  { $_->[0] }
 	    sort { $b->[1] <=> $a->[1] }
 	    map  { [$_, $_ . $norm] }
+	    @positions)[0]);
+}
+
+sub close_position {
+    my ($self, $reference) = @_;
+
+    croak "Undefined reference position in 'close_position' selector"
+	if(!defined($reference));
+    
+    if(ref($reference) eq 'ARRAY') {
+	$reference = vector($reference->[0],
+			    $reference->[1],
+			    $reference->[2] || 0);
+    }
+
+    my @positions = grep { defined($_) } $self->positions;
+
+    if(!@positions) {
+	warn sprintf("No positions to select from in %s.\n", $self->id);
+	return undef;
+    }
+
+    return((map  { $_->[0] }
+	    sort { $a->[1] <=> $b->[1] }
+	    map  { [$_, ($_ - $reference)->length] }
+	    @positions)[0]);
+}
+
+sub distant_position {
+    my ($self, $reference) = @_;
+    
+    croak "Undefined reference position in 'distant_position' selector"
+	if(!defined($reference));
+    
+    if(ref($reference) eq 'ARRAY') {
+	$reference = vector($reference->[0],
+			    $reference->[1],
+			    $reference->[2] || 0);
+    }
+
+    my @positions = grep { defined($_) } $self->positions;
+
+    if(!@positions) {
+	warn sprintf("No positions to select from in %s.\n", $self->id);
+	return undef;
+    }
+
+    return((map  { $_->[0] }
+	    sort { $b->[1] <=> $a->[1] }
+	    map  { [$_, ($_ - $reference)->length] }
 	    @positions)[0]);
 }
 

@@ -5,6 +5,7 @@ use 5.008008;
 
 use Carp;
 use List::MoreUtils qw(any);
+use Scalar::Util qw(blessed);
 
 use Math::Geometry::Construction::Derivate::IntersectionLineLine;
 use Math::Geometry::Construction::Derivate::IntersectionCircleLine;
@@ -15,11 +16,11 @@ C<Math::Geometry::Construction::Line> - line through two points
 
 =head1 VERSION
 
-Version 0.009
+Version 0.011
 
 =cut
 
-our $VERSION = '0.009';
+our $VERSION = '0.011';
 
 
 ###########################################################################
@@ -53,6 +54,20 @@ has 'support'     => (isa      => 'ArrayRef[Item]',
 has 'extend'      => (isa     => 'Num',
 		      is      => 'rw',
 		      default => 0);
+
+sub BUILDARGS {
+    my ($class, %args) = @_;
+    
+    for(my $i=0;$i<@{$args{support}};$i++) {
+	if(!blessed($args{support}->[$i])) {
+	    $args{support}->[$i] = $args{construction}->add_point
+		(position => $args{support}->[$i],
+		 hidden   => 1);
+	}
+    }
+
+    return \%args;
+}
 
 sub BUILD {
     my ($self, $args) = @_;
