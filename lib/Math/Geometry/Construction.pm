@@ -14,11 +14,11 @@ C<Math::Geometry::Construction> - intersecting lines and circles
 
 =head1 VERSION
 
-Version 0.011
+Version 0.012
 
 =cut
 
-our $VERSION = '0.011';
+our $VERSION = '0.012';
 
 
 ###########################################################################
@@ -45,6 +45,11 @@ has 'output'     => (isa     => 'Item',
 		     handles => {draw_line   => 'line',
 				 draw_circle => 'circle',
 				 draw_text   => 'text'});
+
+has 'point_size' => (isa     => 'Num',
+		     is      => 'rw',
+		     default => 6);
+		     
 
 ###########################################################################
 #                                                                         #
@@ -374,6 +379,12 @@ Returns a (copy of) the list of values. This is the C<values> method
 of the C<Hash> trait.
 
 =back
+
+=head3 point_size
+
+Holds the default point size that is used if no explict size is
+given to C<Point> objects. Defaults to C<6>. Changing it will only
+affect C<Point> objects created afterwards.
 
 =head2 Methods for Users
 

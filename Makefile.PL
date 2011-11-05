@@ -36,7 +36,7 @@ my %WriteMakefileArgs = (
     "SVG" => 0,
     "Scalar::Util" => 0
   },
-  "VERSION" => "0.011",
+  "VERSION" => "0.012",
   "test" => {
     "TESTS" => "t/*.t"
   }

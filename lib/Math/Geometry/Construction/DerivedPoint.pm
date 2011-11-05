@@ -12,11 +12,11 @@ C<Math::Geometry::Construction::DerivedPoint> - point derived from other objects
 
 =head1 VERSION
 
-Version 0.011
+Version 0.012
 
 =cut
 
-our $VERSION = '0.011';
+our $VERSION = '0.012';
 
 
 ###########################################################################
@@ -35,8 +35,9 @@ sub id_template { return $ID_TEMPLATE }
 #                                                                         #
 ###########################################################################
 
-with 'Math::Geometry::Construction::Object';
-with 'Math::Geometry::Construction::Output';
+with 'Math::Geometry::Construction::Role::Object';
+with 'Math::Geometry::Construction::Role::Output';
+with 'Math::Geometry::Construction::Role::DrawPoint';
 
 has 'derivate'          => (isa      => 'Item',
 			    is       => 'ro',
@@ -48,15 +49,10 @@ has 'position_selector' => (isa      => 'ArrayRef[Item]',
 			    default  => sub { ['indexed_position', [0]] },
 			    required => 1);
 
-has 'radius'            => (isa     => 'Num',
-			    is      => 'rw',
-			    default => 3);
-
 sub BUILD {
     my ($self, $args) = @_;
 
-    $self->style('stroke', 'black') unless($self->style('stroke'));
-    $self->style('fill', 'white')   unless($self->style('fill'));
+    $self->set_default_point_style;
 }
 
 ###########################################################################
