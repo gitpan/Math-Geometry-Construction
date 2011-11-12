@@ -13,6 +13,7 @@ my %WriteMakefileArgs = (
   "AUTHOR" => "Lutz Gehlen <perl\@lutzgehlen.de>",
   "BUILD_REQUIRES" => {
     "List::Util" => 0,
+    "Test::Exception" => 0,
     "Test::More" => 0,
     "strict" => 0,
     "warnings" => 0
@@ -29,14 +30,15 @@ my %WriteMakefileArgs = (
     "LaTeX::TikZ" => 0,
     "List::MoreUtils" => 0,
     "Math::MatrixReal" => 0,
+    "Math::Vector::Real" => "0.03",
     "Math::VectorReal" => 0,
     "Moose" => 0,
     "Moose::Role" => 0,
-    "MooseX::Params::Validate" => 0,
+    "Params::Validate" => 0,
     "SVG" => 0,
     "Scalar::Util" => 0
   },
-  "VERSION" => "0.012",
+  "VERSION" => "0.014",
   "test" => {
     "TESTS" => "t/*.t"
   }

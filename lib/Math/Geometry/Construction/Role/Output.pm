@@ -11,11 +11,11 @@ C<Math::Geometry::Construction::Role::Output> - graphical output issues
 
 =head1 VERSION
 
-Version 0.012
+Version 0.014
 
 =cut
 
-our $VERSION = '0.012';
+our $VERSION = '0.014';
 
 
 ###########################################################################
@@ -50,7 +50,7 @@ has 'label_offset_y'     => (isa     => 'Num',
 			     is      => 'rw',
 			     default => 0);
 
-has 'style'              => (isa     => 'HashRef[Str]',
+has 'style'              => (isa     => 'HashRef[Str|ArrayRef]',
 			     is      => 'rw',
 			     reader  => 'style_hash',
 			     writer  => '_style_hash',
@@ -58,7 +58,7 @@ has 'style'              => (isa     => 'HashRef[Str]',
 			     default => sub { {} },
 			     handles => {style => 'accessor'});
 
-has 'label_style'        => (isa     => 'HashRef[Str]',
+has 'label_style'        => (isa     => 'HashRef[Str|ArrayRef]',
 			     is      => 'rw',
 			     reader  => 'label_style_hash',
 			     writer  => '_label_style_hash',

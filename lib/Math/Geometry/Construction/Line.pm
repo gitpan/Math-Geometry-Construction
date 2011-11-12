@@ -6,6 +6,7 @@ use 5.008008;
 use Carp;
 use List::MoreUtils qw(any);
 use Scalar::Util qw(blessed);
+use Math::Vector::Real;
 
 =head1 NAME
 
@@ -13,11 +14,11 @@ C<Math::Geometry::Construction::Line> - line through two points
 
 =head1 VERSION
 
-Version 0.012
+Version 0.014
 
 =cut
 
-our $VERSION = '0.012';
+our $VERSION = '0.014';
 
 
 ###########################################################################
@@ -39,6 +40,7 @@ sub id_template { return $ID_TEMPLATE }
 with 'Math::Geometry::Construction::Role::Object';
 with 'Math::Geometry::Construction::Role::PositionSelection';
 with 'Math::Geometry::Construction::Role::Output';
+with 'Math::Geometry::Construction::Role::ImplicitPoint';
 
 has 'support'     => (isa      => 'ArrayRef[Item]',
 		      is       => 'bare',
@@ -56,11 +58,8 @@ sub BUILDARGS {
     my ($class, %args) = @_;
     
     for(my $i=0;$i<@{$args{support}};$i++) {
-	if(!blessed($args{support}->[$i])) {
-	    $args{support}->[$i] = $args{construction}->add_point
-		(position => $args{support}->[$i],
-		 hidden   => 1);
-	}
+	$args{support}->[$i] = $class->import_point
+	    ($args{construction}, $args{support}->[$i]);
     }
 
     return \%args;
@@ -70,6 +69,12 @@ sub BUILD {
     my ($self, $args) = @_;
 
     $self->style('stroke', 'black') unless($self->style('stroke'));
+
+    my @support = $self->support;
+    if(@support != 2) {
+	croak "A line needs exactly two support points";
+	return undef;
+    }
 }
 
 ###########################################################################
@@ -90,43 +95,57 @@ sub positions {
     return map { $_->position } $self->points;
 }
 
+sub parallel {
+    my ($self)            = @_;
+    my @support_positions = map { $_->position } $self->support;
+
+    # check for defined positions
+    if(any { !defined($_) } @support_positions) {
+	warn sprintf("Undefined support point in line %s.\n", $self->id);
+	return undef;
+    }
+
+    my $direction = $support_positions[1] - $support_positions[0];
+    my $length    = abs($direction);
+
+    if($length == 0) {
+	warn sprintf("Support points of line %s are identical.\n",
+		     $self->id);
+	return undef;
+    }
+    
+    return($direction / $length);
+}
+
+sub normal {
+    my ($self)   = @_;
+    my $parallel = $self->parallel;
+
+    return $parallel ? V(-$parallel->[1], $parallel->[0]) : undef;
+}
+
 sub draw {
     my ($self, %args) = @_;
     return undef if $self->hidden;
 
-    my @support = $self->support;
-    if(@support != 2) {
-	warn "A line needs two support points, skipping.\n";
-	return undef;
-    }
+    my $parallel = $self->parallel;
+    return undef if(!$parallel);
 
-    my @support_positions = map { $_->position } @support;
+    my @positions = ($self->extreme_position($parallel)
+		     + $parallel * $self->extend,
+		     $self->extreme_position(-$parallel)
+		     - $parallel * $self->extend);
 
-    # check for defined positions
-    if(any { !defined($_) } @support_positions) {
-	warn sprintf("Undefined support point in line %s, ".
-		     "nothing to draw.\n", $self->id);
-	return undef;
-    }
-
-    my $direction = ($support_positions[1] - $support_positions[0])->norm;
-
-    # I don't need to check for defined points here because at least
-    # the support points are there and will show up as extremes.
-    my @positions = ($self->extreme_position($direction)
-		     + $direction * $self->extend,
-		     $self->extreme_position(-$direction)
-		     - $direction * $self->extend);
-
-    $self->construction->draw_line(x1    => $positions[0]->x,
-				   y1    => $positions[0]->y,
-				   x2    => $positions[1]->x,
-				   y2    => $positions[1]->y,
+    $self->construction->draw_line(x1    => $positions[0]->[0],
+				   y1    => $positions[0]->[1],
+				   x2    => $positions[1]->[0],
+				   y2    => $positions[1]->[1],
 				   style => $self->style_hash,
 				   id    => $self->id);
     
-    $self->draw_label('x' => ($positions[0]->x + $positions[1]->x) / 2,
-		      'y' => ($positions[0]->y + $positions[1]->y) / 2);
+    $self->draw_label
+	('x' => ($positions[0]->[0] + $positions[1]->[0]) / 2,
+	 'y' => ($positions[0]->[1] + $positions[1]->[1]) / 2);
 }
 
 ###########################################################################
@@ -179,8 +198,7 @@ C<Math::Geometry::Construction> instead.
 Holds an array reference of the two points that define the line.
 Must be given to the constructor and should not be touched
 afterwards (the points can change their positions, of course). Must
-hold exactly two points (this is currently not checked, but expected
-e.g. during intersections).
+hold exactly two points.
 
 =head3 extend
 
@@ -189,6 +207,11 @@ somewhat beyond its end points. The length of this extent is set
 here. Defaults to C<0>.
 
 =head2 Methods
+
+=head3 normal
+
+Returns a L<Math::Vector::Real|Math::Vector::Real> of length C<1>
+that is orthogonal to the line.
 
 =head3 draw
 

@@ -5,7 +5,7 @@ extends 'Math::Geometry::Construction::Derivate';
 use 5.008008;
 
 use Carp;
-use Math::VectorReal;
+use Math::Vector::Real;
 
 =head1 NAME
 
@@ -13,11 +13,11 @@ C<Math::Geometry::Construction::Derivate::TranslatedPoint> - point translated by
 
 =head1 VERSION
 
-Version 0.010
+Version 0.014
 
 =cut
 
-our $VERSION = '0.010';
+our $VERSION = '0.014';
 
 
 ###########################################################################
@@ -26,6 +26,8 @@ our $VERSION = '0.010';
 #                                                                         #
 ###########################################################################
 
+with 'Math::Geometry::Construction::Role::VectorFormats';
+
 has 'translator' => (isa      => 'Item',
 		     is       => 'rw',
 		     required => 1);
@@ -33,11 +35,7 @@ has 'translator' => (isa      => 'Item',
 sub BUILDARGS {
     my ($class, %args) = @_;
 
-    if(defined($args{translator}) and ref($args{translator}) eq 'ARRAY') {
-	$args{translator} = vector($args{translator}->[0],
-				   $args{translator}->[1],
-				   $args{translator}->[2] || 0);
-    }
+    $args{translator} = $class->import_vector($args{translator});
 
     return \%args;
 }

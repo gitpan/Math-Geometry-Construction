@@ -11,11 +11,11 @@ C<Math::Geometry::Construction::Role::Object> - shared administrative issues
 
 =head1 VERSION
 
-Version 0.012
+Version 0.014
 
 =cut
 
-our $VERSION = '0.012';
+our $VERSION = '0.014';
 
 
 ###########################################################################
@@ -27,15 +27,13 @@ our $VERSION = '0.012';
 requires 'id_template';
 
 has 'id'           => (isa      => 'Str',
-		       is       => 'rw',
-		       writer   => '_id',
+		       is       => 'ro',
 		       required => 1,
 		       lazy     => 1,
 		       builder  => '_generate_id');
 
 has 'order_index'  => (isa      => 'Int',
-		       is       => 'rw',
-		       required => 1);
+		       is       => 'rw');
 
 has 'construction' => (isa      => 'Item',
 		       is       => 'ro',

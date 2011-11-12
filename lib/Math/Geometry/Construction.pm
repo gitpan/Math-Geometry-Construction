@@ -4,9 +4,9 @@ use 5.008008;
 
 use Carp;
 use Moose;
-use Math::VectorReal;
+use Math::Vector::Real 0.03;
 use SVG;
-use MooseX::Params::Validate;
+use Params::Validate qw(validate validate_pos :types);
 
 =head1 NAME
 
@@ -14,11 +14,11 @@ C<Math::Geometry::Construction> - intersecting lines and circles
 
 =head1 VERSION
 
-Version 0.012
+Version 0.014
 
 =cut
 
-our $VERSION = '0.012';
+our $VERSION = '0.014';
 
 
 ###########################################################################
@@ -27,7 +27,7 @@ our $VERSION = '0.012';
 #                                                                         #
 ###########################################################################
 
-has 'background' => (isa => 'Str',
+has 'background' => (isa => 'Str|ArrayRef',
 		     is  => 'rw');
 
 has 'objects'    => (isa     => 'HashRef[Item]',
@@ -39,17 +39,16 @@ has 'objects'    => (isa     => 'HashRef[Item]',
 				 object_ids    => 'keys',
 				 objects       => 'values'});
 
-has 'output'     => (isa     => 'Item',
-		     is      => 'rw',
-		     writer  => '_output',
-		     handles => {draw_line   => 'line',
-				 draw_circle => 'circle',
-				 draw_text   => 'text'});
-
 has 'point_size' => (isa     => 'Num',
 		     is      => 'rw',
 		     default => 6);
-		     
+
+
+has '_output'    => (isa     => 'Item',
+		     is      => 'rw',
+		     handles => {draw_line   => 'line',
+				 draw_circle => 'circle',
+				 draw_text   => 'text'});
 
 ###########################################################################
 #                                                                         #
@@ -60,16 +59,15 @@ has 'point_size' => (isa     => 'Num',
 sub draw {
     my ($self, $type, %args) = @_;
 
-    ($type) = pos_validated_list([$type], {isa => 'Str'});
-
+    ($type) = validate_pos(@{[$type]},
+			   {type   => SCALAR,
+			    regex => qr/^\s*[A-Za-z0-9\_\:]+\s*$/});
+    
     my $class = $type =~ /\:\:/
 	? $type
 	: 'Math::Geometry::Construction::Draw::'.$type;
 
-    if($class =~ /^\s*[A-Za-z0-9\_\:]+\s*$/) {
-	eval "require $class" or croak "Unable to load module $class: $!";
-    }
-    else { croak "Class name $class did not pass regex check" }
+    eval "require $class" or croak "Unable to load module $class: $!";
 
     my $output = $self->_output($class->new(%args));
 
@@ -110,9 +108,8 @@ sub add_object {
     }
     else { croak "Class name $class did not pass regex check" }
     
-    my $object = $class->new(order_index  => $self->count_objects, 
-			     construction => $self,
-			     @args);
+    my $object = $class->new(construction => $self, @args);
+    $object->order_index($self->count_objects);
     $self->object($object->id, $object);
 
     return $object;
@@ -205,9 +202,17 @@ This is alpha software. The API is likely to change, input checks
 and documentation are sparse, the test suite barely exists. But
 release early, release often, so here we go.
 
-So far, the development has been fast and focused on adding
-features. On the downside, the code has to be considered
-fragile. Please report any problems you encounter.
+Please note: In version 0.014, the underlying vector class has been
+changed from L<Math::VectorReal|Math::VectorReal> to
+L<Math::Vector::Real|Math::Vector::Real>. The advantage of the
+latter is that it natively supports 2D
+vectors. C<Math::Geometry::Construction> continues to accept
+L<Math::VectorReal|Math::VectorReal> objects in constructors, but
+the relevant accessors and mutators will return or accept only
+L<Math::Vector::Real|Math::Vector::Real> objects. Many basic
+applications will not make use of these features and therefore will
+continue to work without change. Applications making use of them,
+however, will need to be adapted.
 
 =head2 Aims
 
@@ -403,9 +408,15 @@ Examples:
   $construction->add_point('x' => 50, 'y' => 30,
                            style => {stroke => 'red'});
 
-  # requires 'use Math::VectorReal' in this package
-  $construction->add_point(position => vector(-15, 23, 0),
+  # requires 'use Math::Vector::Real' in this package
+  $construction->add_point(position => V(-15, 23),
                            hidden   => 1);
+
+  # NB: use of Math::VectorReal is still supported, but discouraged
+  # in favor of Math::Vector::Real
+  # requires 'use Math::VectorReal' in this package
+  $construction->add_point(position => vector(-1.3, 2.7, 0),
+                           size     => 10);
 
 =head3 add_line
 
@@ -454,36 +465,12 @@ C<order_index> arguments. In fact, L<add_point|/add_point>,
 L<add_line|/add_line>, and L<add_circle|/add_circle> just call this
 method with the appropriate class.
 
-=head3 add_derivate
-
-  $construction->add_derivate($class, %args)
-
-Convenience shortcut for L<add_object|/add_object>. The only
-difference is that C<$class> is prepended with
-C<Math::Geometry::Construction::Derivate::>. Therefore you can call
-
-  $construction->add_derivate('IntersectionCircleLine', %args)
-
-instead of
-
-  $construction->add_object
-      ('Math::Geometry::Construction::Derivate::IntersectionCircleLine', %args)
-
-
-Example:
-
-  $construction->add_derivate('TranslatedPoint',
-                              input      => [$point1],
-                              translator => vector(10, -20, 0));
-
 =head3 add_derived_point
 
   $construction->add_derived_point($class, $derivate_args, $point_args)
 
 Combines the creation of a C<Derivate> object and a C<DerivedPoint>
-object in one step. This is particularly useful if the derivate only
-holds one point, e.g. the intersection of two lines, a translated
-point, a point on a line etc..
+object in one step.
 
 The method expects three parameters:
 
@@ -533,10 +520,39 @@ Example:
 
 In this case, we ask for the two intersection points between a
 circle and a line. The C<extreme_point> position selector will give
-as the most extreme of the intersection points in the given
+us the most extreme of the intersection points in the given
 direction. Therefore, in C<SVG> coordinates, C<$derived_points[0]>
 will hold the "northern", C<$derived_points[1]> the "southern"
 intersection point.
+
+=head3 add_derivate
+
+  $construction->add_derivate($class, %args)
+
+Creates and returns a
+L<Math::Geometry::Construction::Derivate|Math::Geometry::Construction::Derivate>
+subclass instance. This can be used to create C<DerivedPoint>
+objects. In most cases, it is convenient to perform these two steps
+in one go, see L<add_derived_point|/add_derived_point>.
+
+This method is a convenience shortcut for L<add_object|/add_object>.
+The only difference is that C<$class> is prepended with
+C<Math::Geometry::Construction::Derivate::>. Therefore you can call
+
+  $construction->add_derivate('IntersectionCircleLine', %args)
+
+instead of
+
+  $construction->add_object
+      ('Math::Geometry::Construction::Derivate::IntersectionCircleLine', %args)
+
+
+Example:
+
+  $derivate = $construction->add_derivate('TranslatedPoint',
+                                          input      => [$point],
+                                          translator => [10, -20]);
+  $point    = $derivate->create_derived_point;
 
 =head3 draw
 
@@ -591,6 +607,14 @@ exception framework, it just croaks if it is unhappy. The error
 messages are listed below in alphabetical order.
 
 =over 4
+
+=item * A line needs exactly two support points
+
+Thrown by the constructor of
+L<Math::Geometry::Construction::Line|Math::Geometry::Construction::Line>
+if the array referenced by the C<support> parameter does not contain
+exactly two elements. The type of the elements is (not yet) checked
+by L<Moose|Moose>.
 
 =item * Class name %s did not pass regex check
 
@@ -661,14 +685,14 @@ The C<close_position> and C<distant_position> position selectors
 expect a reference position. This exception is raised if the
 provided reference is undefined.
 
+=item * Unsupported vector format %s
+
 =back
 
 
 =head2 Warnings
 
 =over 4
-
-=item * A line needs two support points, skipping.
 
 =item * Failed to parse viewBox attribute.
 
@@ -689,11 +713,16 @@ value (diameter of the circle) instead.
 
 I think this message speaks for itself :-).
 
+=item * Support points of line %s are identical, cannot determine
+normal.
+
 =item * Undefined center of circle %s, nothing to draw.
 
 =item * Undefined position of derived point %s, nothing to draw.
 
 =item * Undefined support of circle %s, nothing to draw.
+
+=item *	Undefined support point in line %s, cannot determine normal.
 
 =item * Undefined support point in line %s, nothing to draw.
 
