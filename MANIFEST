@@ -42,6 +42,7 @@ t/070_position_selectors.t
 t/075_translated_point.t
 t/080_point_on_line.t
 t/200_style.t
+t/250_transforms.t
 t/700_boilerplate.t
 t/705_manifest.t
 t/release-pod-coverage.t

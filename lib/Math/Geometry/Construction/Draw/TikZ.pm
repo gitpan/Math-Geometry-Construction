@@ -26,11 +26,6 @@ our $VERSION = '0.013';
 #                                                                         #
 ###########################################################################
 
-has 'transform' => (isa     => 'ArrayRef[Num]',
-		    is      => 'ro',
-		    lazy    => 1,
-		    builder => '_build_transform');
-
 has 'svg_mode'  => (isa     => 'Bool',
 		    is      => 'ro',
 		    default => 0);
@@ -39,22 +34,8 @@ has 'math_mode' => (isa     => 'Bool',
 		    is      => 'ro',
 		    default => 1);
 
-sub _build_transform {
-    my ($self) = @_;
-
-    if(my $vb = $self->view_box) {
-	my $scale = [$self->width / $vb->[2],
-		     $self->height / $vb->[3]];
-	return([@$scale,
-		$vb->[0] * $scale->[0],
-		$vb->[1] * $scale->[1]]);
-    }
-    else { return [1, 1, 0, 0] }
-}
-
 sub BUILD {
     my ($self, $args) = @_;
-    my $transform     = $self->transform;
     my $seq           = TikZ->seq;
 
     # add clip
@@ -71,31 +52,14 @@ sub BUILD {
 #                                                                         #
 ###########################################################################
 
-sub transform_coordinates {
+override 'transform_coordinates' => sub {
     my ($self, $x, $y) = @_;
-    my $transform      = $self->transform;
 
-    if($self->svg_mode) {
-	return($x * $transform->[0] + $transform->[2],
-	       $self->height - ($y * $transform->[1] + $transform->[3]));
-    }
-    else {
-	return($x * $transform->[0] + $transform->[2],
-	       $y * $transform->[1] + $transform->[3]);
-    }
-}
+    ($x, $y) = super();
 
-sub transform_x_length {
-    my ($self, $l) = @_;
-
-    return($l * $self->transform->[0]);
-}
-
-sub transform_y_length {
-    my ($self, $l) = @_;
-
-    return($l * $self->transform->[1]);
-}
+    if($self->svg_mode) { return($x, $self->height - $y) }
+    else                { return($x, $y)                 }
+};
 
 sub process_style {
     my ($self, $element, %style) = @_;

@@ -14,11 +14,11 @@ C<Math::Geometry::Construction> - intersecting lines and circles
 
 =head1 VERSION
 
-Version 0.014
+Version 0.015
 
 =cut
 
-our $VERSION = '0.014';
+our $VERSION = '0.015';
 
 
 ###########################################################################
@@ -69,12 +69,8 @@ sub draw {
 
     eval "require $class" or croak "Unable to load module $class: $!";
 
-    my $output = $self->_output($class->new(%args));
-
-    if(my $bg = $self->background) {
-	$output->set_background($bg);
-    }
-    
+    my $output  = $self->_output
+	($class->new(background => $self->background, %args));
     my @objects = sort { $a->order_index <=> $b->order_index }
         $self->objects;
 
@@ -581,7 +577,7 @@ L<SVG|SVG> constructor. At least C<width> and C<height> should be
 provided.
 
 If a L<background color|/background> is specified then a rectangle
-of of that color is drawn as background. The size is taken from the
+of that color is drawn as background. The size is taken from the
 C<viewBox> attribute if specified, from C<width> and C<height>
 otherwise. If none is given, no background is drawn.
 

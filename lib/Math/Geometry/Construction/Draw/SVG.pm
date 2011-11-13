@@ -12,11 +12,11 @@ C<Math::Geometry::Construction::Draw::SVG> - SVG output
 
 =head1 VERSION
 
-Version 0.013
+Version 0.015
 
 =cut
 
-our $VERSION = '0.013';
+our $VERSION = '0.015';
 
 
 ###########################################################################
@@ -28,19 +28,38 @@ our $VERSION = '0.013';
 sub BUILD {
     my ($self, $args) = @_;
 
-    delete($args->{view_box});
+    my $bg = delete $args->{background};  # modifies given hash!
     $self->_output(SVG->new(%$args));
+    $self->_set_background($bg, %$args);
 }
 
-sub set_background {
-    my ($self, $color) = @_;
-    my $vb             = $self->view_box;
+sub _set_background {
+    my ($self, $color, %args) = @_;
 
-    $self->output->rect('x' => $vb->[0], 'y' => $vb->[1],
-			width  => $vb->[2],
-			height => $vb->[3],
+    return if(!$color);
+    if(ref($color) eq 'ARRAY' and @$color == 3) {
+	$color = sprintf('rgb(%d, %d, %d)', @$color);
+    }
+
+    my $x = 0;
+    my $y = 0;
+    my $w = $args{width};
+    my $h = $args{height};
+    if($args{viewBox}) {
+	my $wsp = qr/\s+|\s*\,\s*/;
+	if($args{viewBox} =~ /^\s*(.*)$wsp(.*)$wsp(.*)$wsp(.*?)\s*$/) {
+	    ($x, $y, $w, $h) = ($1, $2, $3, $4);
+	}
+	else { warn "Failed to parse viewBox attribute.\n" }
+    }
+
+    $self->output->rect('x'    => $x,
+			'y'    => $y,
+			width  => $w,
+			height => $h,
 			stroke => 'none',
 			fill   => $color);
+
 }
 
 sub process_style {
@@ -60,6 +79,12 @@ sub line {
 
     $args{style} = {$self->process_style('line', %{$args{style}})}
 	if($args{style});
+
+    ($args{x1}, $args{y1}) = $self->transform_coordinates
+	($args{x1}, $args{y1});
+    ($args{x2}, $args{y2}) = $self->transform_coordinates
+	($args{x2}, $args{y2});
+
     $self->output->line(%args);
 }
 
@@ -68,7 +93,14 @@ sub circle {
 
     $args{style} = {$self->process_style('circle', %{$args{style}})}
 	if($args{style});
-    $self->output->circle(%args);
+
+    ($args{cx}, $args{cy}) = $self->transform_coordinates
+	($args{cx}, $args{cy});
+    $args{rx} = $self->transform_x_length($args{r});
+    $args{ry} = $self->transform_y_length($args{r});
+    delete $args{r};
+
+    $self->output->ellipse(%args);
 }
 
 sub text {
@@ -76,6 +108,9 @@ sub text {
 
     $args{style} = {$self->process_style('text', %{$args{style}})}
 	if($args{style});
+
+    ($args{x}, $args{y}) = $self->transform_coordinates
+	($args{x}, $args{y});
 
     my $data = delete $args{text};
     my $text = $self->output->text(%args);
