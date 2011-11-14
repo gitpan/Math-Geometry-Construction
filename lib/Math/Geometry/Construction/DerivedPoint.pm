@@ -1,9 +1,9 @@
 package Math::Geometry::Construction::DerivedPoint;
+use Moose;
+extends 'Math::Geometry::Construction::Point';
 
 use 5.008008;
 
-use Moose;
-use Math::VectorReal;
 use Carp;
 
 =head1 NAME
@@ -12,11 +12,11 @@ C<Math::Geometry::Construction::DerivedPoint> - point derived from other objects
 
 =head1 VERSION
 
-Version 0.014
+Version 0.016
 
 =cut
 
-our $VERSION = '0.014';
+our $VERSION = '0.016';
 
 
 ###########################################################################
@@ -37,7 +37,6 @@ sub id_template { return $ID_TEMPLATE }
 
 with 'Math::Geometry::Construction::Role::Object';
 with 'Math::Geometry::Construction::Role::Output';
-with 'Math::Geometry::Construction::Role::DrawPoint';
 
 has 'derivate'          => (isa      => 'Item',
 			    is       => 'ro',
@@ -48,12 +47,6 @@ has 'position_selector' => (isa      => 'ArrayRef[Item]',
 			    reader   => '_position_selector',
 			    default  => sub { ['indexed_position', [0]] },
 			    required => 1);
-
-sub BUILD {
-    my ($self, $args) = @_;
-
-    $self->set_default_point_style;
-}
 
 ###########################################################################
 #                                                                         #
@@ -66,29 +59,6 @@ sub position {
 
     my ($selection_method, $args) = @{$self->_position_selector};
     return $self->derivate->$selection_method(@$args);
-}
-
-sub draw {
-    my ($self, %args) = @_;
-    return undef if $self->hidden;
-
-    my $position = $self->position;
-    if(!defined($position)) {
-	warn sprintf("Undefined position of derived point %s, ".
-		     "nothing to draw.\n", $self->id);
-	return undef;
-    }
-
-    $self->construction->draw_circle(cx    => $position->[0],
-				     cy    => $position->[1],
-				     r     => $self->radius,
-				     style => $self->style_hash,
-				     id    => $self->id);
-
-    $self->draw_label('x' => $position->[0],
-		      'y' => $position->[1]);
-
-    return undef;
 }
 
 ###########################################################################
@@ -118,7 +88,7 @@ __END__
 
 =head2 Methods for Subclass Developers
 
-=head3 as_svg
+=head3 draw
 
 =head3 id_template
 

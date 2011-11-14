@@ -14,11 +14,11 @@ C<Math::Geometry::Construction> - intersecting lines and circles
 
 =head1 VERSION
 
-Version 0.015
+Version 0.016
 
 =cut
 
-our $VERSION = '0.015';
+our $VERSION = '0.016';
 
 
 ###########################################################################
@@ -74,12 +74,11 @@ sub draw {
     my @objects = sort { $a->order_index <=> $b->order_index }
         $self->objects;
 
-    my %is_point = ('Math::Geometry::Construction::Point'        => 1,
-		    'Math::Geometry::Construction::DerivedPoint' => 1);
-    foreach(grep { !$is_point{blessed($_)} } @objects) {
+    my $point_class = 'Math::Geometry::Construction::Point';
+    foreach(grep { !eval { $_->isa($point_class) } } @objects) {
 	$_->draw(output => $output) if($_->can('draw'));
     }
-    foreach(grep { $is_point{blessed($_)} } @objects) {
+    foreach(grep { eval { $_->isa($point_class) } } @objects) {
 	$_->draw(output => $output) if($_->can('draw'));
     }
 
@@ -114,20 +113,22 @@ sub add_object {
 sub add_point {
     my ($self, @args) = @_;
 
-    return $self->add_object('Math::Geometry::Construction::Point', @args);
+    return $self->add_object
+	('Math::Geometry::Construction::FixedPoint', @args);
 }
 
 sub add_line {
     my ($self, @args) = @_;
 
-    return $self->add_object('Math::Geometry::Construction::Line', @args);
+    return $self->add_object
+	('Math::Geometry::Construction::Line', @args);
 }
 
 sub add_circle {
     my ($self, @args) = @_;
 
-    return $self->add_object('Math::Geometry::Construction::Circle',
-			     @args);
+    return $self->add_object
+	('Math::Geometry::Construction::Circle', @args);
 }
 
 sub add_derivate {
@@ -692,6 +693,10 @@ provided reference is undefined.
 
 =item * Failed to parse viewBox attribute.
 
+=item * Method position must be overloaded
+
+=item * Method id must be overloaded
+
 =item * No positions to select from in %s.
 
 This warning is issued by the position selectors if there is are no
@@ -714,7 +719,7 @@ normal.
 
 =item * Undefined center of circle %s, nothing to draw.
 
-=item * Undefined position of derived point %s, nothing to draw.
+=item * Undefined position of point %s, nothing to draw.
 
 =item * Undefined support of circle %s, nothing to draw.
 
