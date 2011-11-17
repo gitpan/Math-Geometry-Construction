@@ -30,4 +30,4 @@ requires:
   SVG: 0
   Scalar::Util: 0
   perl: 5.008008
-version: 0.016
+version: 0.017

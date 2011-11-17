@@ -11,11 +11,11 @@ C<Math::Geometry::Construction::Derivate> - derive points from objects
 
 =head1 VERSION
 
-Version 0.016
+Version 0.017
 
 =cut
 
-our $VERSION = '0.016';
+our $VERSION = '0.017';
 
 
 ###########################################################################
@@ -53,6 +53,8 @@ has 'input' => (isa      => 'ArrayRef[Item]',
 
 sub positions { return() }
 
+sub register_derived_point {}
+
 sub create_derived_point {
     my ($self, %args) = @_;
 
@@ -61,10 +63,8 @@ sub create_derived_point {
 	 derivate => $self,
 	 %args);
 
-    foreach($self->input) {
-	$_->add_poi($point);
-    }
-
+    $self->register_derived_point($point);
+    
     return $point;
 }
 

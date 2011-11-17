@@ -28,6 +28,7 @@ lib/Math/Geometry/Construction/Point.pm
 lib/Math/Geometry/Construction/Role/ImplicitPoint.pm
 lib/Math/Geometry/Construction/Role/Object.pm
 lib/Math/Geometry/Construction/Role/Output.pm
+lib/Math/Geometry/Construction/Role/PointSet.pm
 lib/Math/Geometry/Construction/Role/PositionSelection.pm
 lib/Math/Geometry/Construction/Role/VectorFormats.pm
 t/000_load.t

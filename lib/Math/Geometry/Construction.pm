@@ -14,11 +14,11 @@ C<Math::Geometry::Construction> - intersecting lines and circles
 
 =head1 VERSION
 
-Version 0.016
+Version 0.017
 
 =cut
 
-our $VERSION = '0.016';
+our $VERSION = '0.017';
 
 
 ###########################################################################
@@ -50,9 +50,122 @@ has '_output'    => (isa     => 'Item',
 				 draw_circle => 'circle',
 				 draw_text   => 'text'});
 
+sub points {
+    my ($self) = @_;
+    my $class  = 'Math::Geometry::Construction::Point';
+
+    return(grep { $_->isa($class) } $self->objects);
+}
+
+sub lines {
+    my ($self) = @_;
+    my $class  = 'Math::Geometry::Construction::Line';
+
+    return(grep { $_->isa($class) } $self->objects);
+}
+
+sub circles {
+    my ($self) = @_;
+    my $class  = 'Math::Geometry::Construction::Circle';
+
+    return(grep { $_->isa($class) } $self->objects);
+}
+
+sub add_object {
+    my ($self, $class, @args) = @_;
+
+    if($class =~ /^\s*[A-Za-z0-9\_\:]+\s*$/) {
+	eval "require $class" or croak "Unable to load module $class: $!";
+    }
+    else { croak "Class name $class did not pass regex check" }
+    
+    my $object = $class->new(construction => $self, @args);
+    $object->order_index($self->count_objects);
+    $self->object($object->id, $object);
+
+    return $object;
+}
+
+sub add_point {
+    my ($self, @args) = @_;
+
+    return $self->add_object
+	('Math::Geometry::Construction::FixedPoint', @args);
+}
+
+sub add_line {
+    my ($self, @args) = @_;
+
+    return $self->add_object
+	('Math::Geometry::Construction::Line', @args);
+}
+
+sub find_line {
+    my ($self, %args) = @_;
+
+    # TODO: test %args
+    
+    foreach($self->lines) {
+	return $_ if($_->has_point(@{$args{support}}));
+    }
+    return undef;
+}
+
+sub find_or_add_line {
+    my ($self, @args) = @_;
+
+    return($self->find_line(@args) or $self->add_line(@args));
+}
+
+sub add_circle {
+    my ($self, @args) = @_;
+
+    return $self->add_object
+	('Math::Geometry::Construction::Circle', @args);
+}
+
+sub find_circle {
+    my ($self, %args) = @_;
+
+    # TODO: test %args
+    
+    foreach($self->circles) {
+	return $_ if($_->center->id eq $args{center}->id and
+		     $_->has_point($args{support}));
+    }
+    return undef;
+}
+
+sub find_or_add_circle {
+    my ($self, @args) = @_;
+
+    return($self->find_circle(@args) or $self->add_circle(@args));
+}
+
+sub add_derivate {
+    my ($self, $class, @args) = @_;
+
+    return $self->add_object
+	('Math::Geometry::Construction::Derivate::'.$class, @args);
+}
+
+sub add_derived_point {
+    my ($self, $class, $derivate_args, $point_args) = @_;
+
+    my $derivate = $self->add_derivate($class, %$derivate_args);
+    
+    if(!defined($point_args) or ref($point_args) eq 'HASH') {
+	return $derivate->create_derived_point(%{$point_args || {}});
+    }
+    else {
+	return(map { $derivate->create_derived_point(%{$_ || {}}) }
+	       @$point_args);
+    }
+}
+
 ###########################################################################
 #                                                                         #
-#                             Retrieve Data                               #
+#                                   Draw                                  #
 #                                                                         #
 ###########################################################################
 
@@ -88,69 +201,6 @@ sub draw {
 sub as_svg  { return(shift(@_)->draw('SVG', @_)) }
 
 sub as_tikz { return(shift(@_)->draw('TikZ', @_)) }
-
-###########################################################################
-#                                                                         #
-#                              Change Data                                # 
-#                                                                         #
-###########################################################################
-
-sub add_object {
-    my ($self, $class, @args) = @_;
-
-    if($class =~ /^\s*[A-Za-z0-9\_\:]+\s*$/) {
-	eval "require $class" or croak "Unable to load module $class: $!";
-    }
-    else { croak "Class name $class did not pass regex check" }
-    
-    my $object = $class->new(construction => $self, @args);
-    $object->order_index($self->count_objects);
-    $self->object($object->id, $object);
-
-    return $object;
-}
-
-sub add_point {
-    my ($self, @args) = @_;
-
-    return $self->add_object
-	('Math::Geometry::Construction::FixedPoint', @args);
-}
-
-sub add_line {
-    my ($self, @args) = @_;
-
-    return $self->add_object
-	('Math::Geometry::Construction::Line', @args);
-}
-
-sub add_circle {
-    my ($self, @args) = @_;
-
-    return $self->add_object
-	('Math::Geometry::Construction::Circle', @args);
-}
-
-sub add_derivate {
-    my ($self, $class, @args) = @_;
-
-    return $self->add_object
-	('Math::Geometry::Construction::Derivate::'.$class, @args);
-}
-
-sub add_derived_point {
-    my ($self, $class, $derivate_args, $point_args) = @_;
-
-    my $derivate = $self->add_derivate($class, %$derivate_args);
-    
-    if(!defined($point_args) or ref($point_args) eq 'HASH') {
-	return $derivate->create_derived_point(%{$point_args || {}});
-    }
-    else {
-	return(map { $derivate->create_derived_point(%{$_ || {}}) }
-	       @$point_args);
-    }
-}
 
 1;
 
@@ -195,9 +245,10 @@ __END__
 
 =head1 DESCRIPTION
 
-This is alpha software. The API is likely to change, input checks
-and documentation are sparse, the test suite barely exists. But
-release early, release often, so here we go.
+This is alpha software. The API is stabilizing and the test suite at
+least deserves that name by now, but input checks and documentation
+are still sparse. However, release early, release often, so here we
+go.
 
 Please note: In version 0.014, the underlying vector class has been
 changed from L<Math::VectorReal|Math::VectorReal> to
@@ -259,6 +310,14 @@ languages. With this module, you have Perl as your "macro language".
 
 =back
 
+=head2 Output Formats
+
+The current output formats are C<SVG> and C<TikZ>. Especially the
+latter one is experimental and the interface might change in future
+versions. Other output engines could be written by subclassing
+L<Math::Geometry::Construction::Draw|Math::Geometry::Construction::Draw>.
+However, documentation of the interface is not available, yet.
+
 =head2 Intersection Concept
 
 Intersecting two objects consists of two steps. First, you create a
@@ -273,35 +332,16 @@ given direction etc..
 
 The C<DerivedPoint> object only holds information about how to
 select the right point. Only when you ask for the position of the
-point it is actually calculated.
+point it is actually calculated. The purpose of this approach is
+that you will always get the desired point based on the current
+situation, even if you move your start configuration and the
+arrangement of points changes.
 
 The classes are called C<Derivate> and C<DerivedPoint> because this
 concept is applicable beyond the case of intersections. It could,
 for example, be used to calculate the center of a circle given by
 three points. Whenever some operation based on given objects results
 in a finite number of points, it fits into this concept.
-
-=head2 Output
-
-=head3 Output Formats
-
-The current output formats are C<SVG> and C<TikZ>. Especially the
-latter one is experimental and the interface might change in future
-versions. Other output engines could be written by subclassing
-L<Math::Geometry::Construction::Draw|Math::Geometry::Construction::Draw>.
-However, documentation of the interface is not available, yet.
-
-=head3 How much to draw?
-
-Each line or similar object holds a number of "points of
-interest". These are - in case of the line - the two points that
-define the line and all intersection points the line is involved
-in. At drawing time, the object determines the most extreme points
-and they define the end points of the drawn line segment. The
-C<extend> attribute allows to extend the line for a given length
-beyond these points because this often looks better. A similar
-concept will be implemented for circles, but currently, the full
-circle is drawn.
 
 =head2 Current Status
 
@@ -388,7 +428,7 @@ Holds the default point size that is used if no explict size is
 given to C<Point> objects. Defaults to C<6>. Changing it will only
 affect C<Point> objects created afterwards.
 
-=head2 Methods for Users
+=head2 Methods
 
 =head3 add_point
 
@@ -594,6 +634,26 @@ and
 L<Math::Geometry::Construction::Draw::TikZ|Math::Geometry::Construction::Draw::TikZ>
 for supported parameters. At least C<width> and C<height> should be
 provided.
+
+
+=head2 List of Derivates
+
+=head2 Partial Drawing
+
+Each line or similar object holds a number of "points of
+interest". These are - in case of the line - the two points that
+define the line and all intersection points the line is involved
+in. At drawing time, the object determines the most extreme points
+and they define the end points of the drawn line segment. The
+C<extend> attribute allows to extend the line for a given length
+beyond these points because this often looks better. A similar
+concept will be implemented for circles, but currently, the full
+circle is drawn.
+
+=head2 Reusing Objects
+
+=head2 Labels
+
 
 =head1 DIAGNOSTICS
 

@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 43;
+use Test::More tests => 116;
 use Test::Exception;
 use Math::Geometry::Construction;
 
@@ -98,5 +98,283 @@ sub id {
     is($object->position->[1], 8, 'position y');
 }
 
+sub find_line {
+    my $construction;
+    my @points;
+    my @lines;
+    my $circle;
+
+    $construction = Math::Geometry::Construction->new;
+
+    @points = ($construction->add_point(position => [0, 1]),
+	       $construction->add_point(position => [1, 2]),
+	       $construction->add_point(position => [2, 3]),
+	       $construction->add_point(position => [-2, 10]));
+
+    ok(!defined($construction->find_line(support => [@points[0, 1]])),
+       'no lines, line not found');
+
+    @lines = ($construction->add_line(support => [@points[0, 1]]));
+    ok(defined($construction->find_line(support => [@points[0, 1]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[1, 0]])),
+       'line found in reverse order');
+    ok(!defined($construction->find_line(support => [@points[1, 2]])),
+       'line not found');
+    ok(!defined($construction->find_line(support => [@points[2, 3]])),
+       'line not found');
+    ok(!defined($construction->find_line(support => [@points[3, 0]])),
+       'line not found');
+
+    push(@lines, $construction->add_line(support => [@points[2, 3]]));
+    ok(defined($construction->find_line(support => [@points[0, 1]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[1, 0]])),
+       'line found in reverse order');
+    ok(!defined($construction->find_line(support => [@points[1, 2]])),
+       'line not found');
+    ok(defined($construction->find_line(support => [@points[2, 3]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[3, 2]])),
+       'line found in reverse order');
+    ok(!defined($construction->find_line(support => [@points[3, 0]])),
+       'line not found');
+
+    push(@points, $construction->add_derived_point
+	 ('IntersectionLineLine', {input => [@lines]}));
+    ok(defined($construction->find_line(support => [@points[0, 1]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[1, 0]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[0, 4]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[4, 0]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[1, 4]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[4, 1]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[2, 3]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[3, 2]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[2, 4]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[4, 2]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[3, 4]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[4, 3]])),
+       'line found');
+    ok(!defined($construction->find_line(support => [@points[0, 2]])),
+       'line not found');
+    ok(!defined($construction->find_line(support => [@points[2, 0]])),
+       'line not found');
+    ok(!defined($construction->find_line(support => [@points[0, 3]])),
+       'line not found');
+    ok(!defined($construction->find_line(support => [@points[3, 0]])),
+       'line not found');
+    ok(!defined($construction->find_line(support => [@points[1, 2]])),
+       'line not found');
+    ok(!defined($construction->find_line(support => [@points[2, 1]])),
+       'line not found');
+    ok(!defined($construction->find_line(support => [@points[1, 3]])),
+       'line not found');
+    ok(!defined($construction->find_line(support => [@points[3, 1]])),
+       'line not found');
+
+    push(@points, $construction->add_derived_point
+	 ('PointOnLine', {input => [$lines[0]], quantile => 0.2}));
+    ok(defined($construction->find_line(support => [@points[0, 5]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[5, 0]])),
+       'line found');
+    ok(!defined($construction->find_line(support => [@points[2, 5]])),
+       'line not found');
+    ok(!defined($construction->find_line(support => [@points[5, 2]])),
+       'line not found');
+
+    $circle = $construction->add_circle(center => [2, -1],
+					radius => 10);
+    push(@points, $construction->add_derived_point
+	 ('IntersectionCircleLine',
+	  {input => [$lines[0], $circle]},
+	  {position_selector => ['indexed_position', [0]]}));
+    push(@points, $construction->add_derived_point
+	 ('IntersectionCircleLine',
+	  {input => [$lines[0], $circle]},
+	  {position_selector => ['indexed_position', [1]]}));
+    ok(defined($construction->find_line(support => [@points[0, 6]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[0, 7]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[5, 6]])),
+       'line found');
+    ok(defined($construction->find_line(support => [@points[6, 7]])),
+       'line found');
+    ok(!defined($construction->find_line(support => [@points[2, 6]])),
+       'line not found');
+    ok(!defined($construction->find_line(support => [@points[7, 3]])),
+       'line not found');
+}
+
+sub find_circle {
+    my $construction;
+    my @points;
+    my @circles;
+    my $line;
+
+    $construction = Math::Geometry::Construction->new;
+
+    @points = ($construction->add_point(position => [0, 1]),
+	       $construction->add_point(position => [1, 2]),
+	       $construction->add_point(position => [1, 2]),
+	       $construction->add_point(position => [-2, 10]),
+	       $construction->add_point(position => [0, 0]));
+
+    ok(!defined($construction->find_circle(support => [@points[0, 1]])),
+       'no circles, circle not found');
+    @circles = ($construction->add_circle(center  => $points[0],
+					  support => $points[1]));
+    ok(defined($construction->find_circle(center  => $points[0],
+					  support => $points[1])),
+       'circle found');
+    ok(!defined($construction->find_circle(center  => $points[1],
+					   support => $points[0])),
+       'circle not found');
+    ok(!defined($construction->find_circle(center  => $points[0],
+					   support => $points[2])),
+       'circle not found');
+
+    push(@circles, $construction->add_circle(center  => $points[3],
+					     support => $points[4]));
+    ok(defined($construction->find_circle(center  => $points[0],
+					  support => $points[1])),
+       'circle found');
+    ok(defined($construction->find_circle(center  => $points[3],
+					  support => $points[4])),
+       'circle found');
+
+    push(@points, $construction->add_derived_point
+	 ('IntersectionCircleCircle',
+	  {input => [@circles[0, 1]]},
+	  [{position_selector => ['indexed_position', [0]]},
+	   {position_selector => ['indexed_position', [1]]}]));
+    ok(defined($construction->find_circle(center  => $points[0],
+					  support => $points[1])),
+       'circle found');
+    ok(defined($construction->find_circle(center  => $points[0],
+					  support => $points[5])),
+       'circle found');
+    ok(defined($construction->find_circle(center  => $points[0],
+					  support => $points[6])),
+       'circle found');
+    ok(defined($construction->find_circle(center  => $points[3],
+					  support => $points[5])),
+       'circle found');
+    ok(defined($construction->find_circle(center  => $points[3],
+					  support => $points[6])),
+       'circle found');
+    ok(!defined($construction->find_circle(center  => $points[0],
+					   support => $points[2])),
+       'circle not found');
+    ok(!defined($construction->find_circle(center  => $points[0],
+					   support => $points[4])),
+       'circle not found');
+    ok(!defined($construction->find_circle(center  => $points[3],
+					   support => $points[0])),
+       'circle not found');
+    ok(!defined($construction->find_circle(center  => $points[3],
+					   support => $points[1])),
+       'circle not found');
+    ok(!defined($construction->find_circle(center  => $points[4],
+					   support => $points[3])),
+       'circle not found');
+
+    $line = $construction->add_line(support => [[0, -1], [10, 11]]);
+    push(@points, $construction->add_derived_point
+	 ('IntersectionCircleLine',
+	  {input => [$line, $circles[0]]},
+	  [{position_selector => ['indexed_position', [0]]},
+	   {position_selector => ['indexed_position', [1]]}]));
+    ok(defined($construction->find_circle(center  => $points[0],
+					  support => $points[1])),
+       'circle found');
+    ok(defined($construction->find_circle(center  => $points[0],
+					  support => $points[7])),
+       'circle found');
+    ok(defined($construction->find_circle(center  => $points[0],
+					  support => $points[8])),
+       'circle found');
+    ok(!defined($construction->find_circle(center  => $points[0],
+					   support => $points[2])),
+       'circle not found');
+    ok(!defined($construction->find_circle(center  => $points[0],
+					   support => $points[4])),
+       'circle not found');
+
+    # TODO: tests with center/radius circles
+}
+
+sub find_or_add {
+    my $construction;
+    my @points;
+    my @lines;
+    my @circles;
+
+    $construction = Math::Geometry::Construction->new;
+
+    @points = ($construction->add_point(position => [0, 0]),
+	       $construction->add_point(position => [1, 2]),
+	       $construction->add_point(position => [1, 2]),
+	       $construction->add_point(position => [-1, -2]),
+	       $construction->add_point(position => [5, 12]));
+
+    push(@lines,
+	 $construction->find_or_add_line(support => [@points[0, 1]]));
+    is($lines[0]->id, 'L000000005', 'first line');
+    is($construction->find_or_add_line(support => [@points[0, 1]])->id,
+       $lines[0]->id,
+       'find_or_add again finds');
+    push(@lines,
+	 $construction->find_or_add_line(support => [@points[0, 2]]));
+    is($lines[1]->id, 'L000000006',
+       'another line with identical coords gets added');
+    is($construction->find_or_add_line(support => [@points[0, 1]])->id,
+       $lines[0]->id,
+       'first is still found');
+
+    push(@circles, $construction->find_or_add_circle
+	 (center  => $points[0],
+	  support => $points[1]));
+    is($circles[0]->id, 'C000000007', 'first circle');
+    is($construction->find_or_add_circle(center  => $points[0],
+					 support => $points[1])->id,
+       $circles[0]->id,
+       'find_or_add again finds');
+    push(@circles, $construction->find_or_add_circle
+	 (center  => $points[0],
+	  support => $points[2]));
+    is($circles[1]->id, 'C000000008',
+       'another circle with identical coords gets added');
+    push(@circles, $construction->find_or_add_circle
+	 (center  => $points[0],
+	  support => $points[3]));
+    is($circles[1]->id, 'C000000008',
+       'another circle with opposite support gets added');
+    push(@circles, $construction->find_or_add_circle
+	 (center  => $points[0],
+	  support => $points[4]));
+    is($circles[1]->id, 'C000000008',
+       'another circle with different support coords gets added');
+    is($construction->find_or_add_circle(center  => $points[0],
+					 support => $points[1])->id,
+       $circles[0]->id,
+       'first is still found');
+}
+
 order_index;
 id;
+find_line;
+find_circle;
+find_or_add;
