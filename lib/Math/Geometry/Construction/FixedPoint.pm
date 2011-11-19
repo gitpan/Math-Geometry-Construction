@@ -13,11 +13,11 @@ C<Math::Geometry::Construction::FixedPoint> - independent user-defined point
 
 =head1 VERSION
 
-Version 0.016
+Version 0.018
 
 =cut
 
-our $VERSION = '0.016';
+our $VERSION = '0.018';
 
 
 ###########################################################################
@@ -26,11 +26,13 @@ our $VERSION = '0.016';
 #                                                                         #
 ###########################################################################
 
-with 'Math::Geometry::Construction::Role::VectorFormats';
+with 'Math::Geometry::Construction::Role::Input';
+with 'Math::Geometry::Construction::Role::Buffering';
 
 has 'position' => (isa      => 'Math::Vector::Real',
 	           is       => 'rw',
-	           required => 1);
+	           required => 1,
+		   trigger  => \&clear_global_buffer);
 
 sub BUILDARGS {
     my ($class, %args) = @_;
@@ -155,17 +157,6 @@ become more flexible in the future.
 =head3 id_template
 
 Class method returning C<$ID_TEMPLATE>, which defaults to C<'P%09d'>.
-
-=head1 DIAGNOSTICS
-
-=head2 Exceptions
-
-=head2 Warnings
-
-
-=head1 BUGS AND LIMITATIONS
-
-No bugs have been reported. Please report all bugs directly to the author.
 
 
 =head1 AUTHOR

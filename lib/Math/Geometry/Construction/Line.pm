@@ -14,11 +14,11 @@ C<Math::Geometry::Construction::Line> - line through two points
 
 =head1 VERSION
 
-Version 0.017
+Version 0.018
 
 =cut
 
-our $VERSION = '0.017';
+our $VERSION = '0.018';
 
 
 ###########################################################################
@@ -41,7 +41,6 @@ with 'Math::Geometry::Construction::Role::Object';
 with 'Math::Geometry::Construction::Role::PositionSelection';
 with 'Math::Geometry::Construction::Role::Output';
 with 'Math::Geometry::Construction::Role::PointSet';
-with 'Math::Geometry::Construction::Role::ImplicitPoint';
 
 has 'support'     => (isa      => 'ArrayRef[Item]',
 		      is       => 'bare',
@@ -50,10 +49,6 @@ has 'support'     => (isa      => 'ArrayRef[Item]',
 		      handles  => {count_support  => 'count',
 				   support        => 'elements',
 				   single_support => 'accessor'});
-
-has 'extend'      => (isa     => 'Num',
-		      is      => 'rw',
-		      default => 0);
 
 sub BUILDARGS {
     my ($class, %args) = @_;
@@ -221,17 +216,6 @@ points.
 =head3 id_template
 
 Class method returning C<$ID_TEMPLATE>, which defaults to C<'L%09d'>.
-
-=head1 DIAGNOSTICS
-
-=head2 Exceptions
-
-=head2 Warnings
-
-
-=head1 BUGS AND LIMITATIONS
-
-No bugs have been reported. Please report all bugs directly to the author.
 
 
 =head1 AUTHOR

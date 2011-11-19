@@ -13,11 +13,11 @@ C<Math::Geometry::Construction::Derivate::TranslatedPoint> - point translated by
 
 =head1 VERSION
 
-Version 0.014
+Version 0.018
 
 =cut
 
-our $VERSION = '0.014';
+our $VERSION = '0.018';
 
 
 ###########################################################################
@@ -26,11 +26,13 @@ our $VERSION = '0.014';
 #                                                                         #
 ###########################################################################
 
-with 'Math::Geometry::Construction::Role::VectorFormats';
+with 'Math::Geometry::Construction::Role::Input';
+with 'Math::Geometry::Construction::Role::Buffering';
 
 has 'translator' => (isa      => 'Item',
 		     is       => 'rw',
-		     required => 1);
+		     required => 1,
+		     trigger  => \&clear_global_buffer);
 
 sub BUILDARGS {
     my ($class, %args) = @_;
@@ -46,7 +48,7 @@ sub BUILDARGS {
 #                                                                         #
 ###########################################################################
 
-sub positions {
+sub calculate_positions {
     my ($self) = @_;
     my @input  = $self->input;
 
@@ -88,17 +90,6 @@ __END__
 =head2 Methods for Users
 
 =head2 Methods for Subclass Developers
-
-=head1 DIAGNOSTICS
-
-=head2 Exceptions
-
-=head2 Warnings
-
-
-=head1 BUGS AND LIMITATIONS
-
-No bugs have been reported. Please report all bugs directly to the author.
 
 
 =head1 AUTHOR

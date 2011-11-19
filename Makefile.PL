@@ -12,7 +12,6 @@ my %WriteMakefileArgs = (
   "ABSTRACT" => "intersecting lines and circles",
   "AUTHOR" => "Lutz Gehlen <perl\@lutzgehlen.de>",
   "BUILD_REQUIRES" => {
-    "List::Util" => 0,
     "Math::VectorReal" => 0,
     "Test::Exception" => 0,
     "Test::More" => 0,
@@ -30,6 +29,7 @@ my %WriteMakefileArgs = (
     "Carp" => 0,
     "LaTeX::TikZ" => 0,
     "List::MoreUtils" => 0,
+    "List::Util" => 0,
     "Math::MatrixReal" => 0,
     "Math::Vector::Real" => "0.03",
     "Moose" => 0,
@@ -38,7 +38,7 @@ my %WriteMakefileArgs = (
     "SVG" => 0,
     "Scalar::Util" => 0
   },
-  "VERSION" => "0.017",
+  "VERSION" => "0.018",
   "test" => {
     "TESTS" => "t/*.t"
   }

@@ -7,6 +7,7 @@ use Moose;
 use Math::Vector::Real 0.03;
 use SVG;
 use Params::Validate qw(validate validate_pos :types);
+use List::Util qw(min);
 
 =head1 NAME
 
@@ -14,11 +15,11 @@ C<Math::Geometry::Construction> - intersecting lines and circles
 
 =head1 VERSION
 
-Version 0.017
+Version 0.018
 
 =cut
 
-our $VERSION = '0.017';
+our $VERSION = '0.018';
 
 
 ###########################################################################
@@ -27,28 +28,41 @@ our $VERSION = '0.017';
 #                                                                         #
 ###########################################################################
 
-has 'background' => (isa => 'Str|ArrayRef',
-		     is  => 'rw');
+has 'background'     => (isa => 'Str|ArrayRef',
+			 is  => 'rw');
 
-has 'objects'    => (isa     => 'HashRef[Item]',
-		     is      => 'bare',
-		     traits  => ['Hash'],
-		     default => sub { {} },
-		     handles => {count_objects => 'count',
-				 object        => 'accessor',
-				 object_ids    => 'keys',
-				 objects       => 'values'});
+has 'objects'        => (isa     => 'HashRef[Item]',
+			 is      => 'bare',
+			 traits  => ['Hash'],
+			 default => sub { {} },
+			 handles => {count_objects => 'count',
+				     object        => 'accessor',
+				     object_ids    => 'keys',
+				     objects       => 'values'});
 
-has 'point_size' => (isa     => 'Num',
-		     is      => 'rw',
-		     default => 6);
+has 'point_size'     => (isa     => 'Num',
+			 is      => 'rw',
+			 default => 6);
 
 
-has '_output'    => (isa     => 'Item',
-		     is      => 'rw',
-		     handles => {draw_line   => 'line',
-				 draw_circle => 'circle',
-				 draw_text   => 'text'});
+has 'buffer_results' => (isa     => 'Bool',
+			 is      => 'rw',
+			 default => 1,
+			 trigger => \&clear_buffer);
+
+has '_output'        => (isa     => 'Item',
+			 is      => 'rw',
+			 handles => {draw_line   => 'line',
+				     draw_circle => 'circle',
+				     draw_text   => 'text'});
+
+sub clear_buffer {
+    my ($self) = @_;
+
+    foreach($self->objects) {
+	$_->clear_buffer if($_->can('clear_buffer'));
+    }
+}
 
 sub points {
     my ($self) = @_;
@@ -421,6 +435,21 @@ Returns a (copy of) the list of values. This is the C<values> method
 of the C<Hash> trait.
 
 =back
+
+As more specific accessors there are
+
+=over 4
+
+=item * points
+
+=item * lines
+
+=item * circles
+
+=back
+
+The C<points> list contains both user defined points and derived
+points.
 
 =head3 point_size
 

@@ -12,11 +12,11 @@ C<Math::Geometry::Construction::DerivedPoint> - point derived from other objects
 
 =head1 VERSION
 
-Version 0.016
+Version 0.018
 
 =cut
 
-our $VERSION = '0.016';
+our $VERSION = '0.018';
 
 
 ###########################################################################
@@ -37,6 +37,7 @@ sub id_template { return $ID_TEMPLATE }
 
 with 'Math::Geometry::Construction::Role::Object';
 with 'Math::Geometry::Construction::Role::Output';
+with 'Math::Geometry::Construction::Role::Buffering';
 
 has 'derivate'          => (isa      => 'Item',
 			    is       => 'ro',
@@ -57,8 +58,14 @@ has 'position_selector' => (isa      => 'ArrayRef[Item]',
 sub position {
     my ($self) = @_;
 
+    return $self->buffer('position') if($self->is_buffered('position'));
+
     my ($selection_method, $args) = @{$self->_position_selector};
-    return $self->derivate->$selection_method(@$args);
+    my $position = $self->derivate->$selection_method(@$args);
+
+    $self->buffer('position', $position)
+	if($self->construction->buffer_results);
+    return $position;
 }
 
 ###########################################################################
@@ -91,17 +98,6 @@ __END__
 =head3 draw
 
 =head3 id_template
-
-=head1 DIAGNOSTICS
-
-=head2 Exceptions
-
-=head2 Warnings
-
-
-=head1 BUGS AND LIMITATIONS
-
-No bugs have been reported. Please report all bugs directly to the author.
 
 
 =head1 AUTHOR

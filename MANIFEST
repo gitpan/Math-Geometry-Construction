@@ -25,12 +25,12 @@ lib/Math/Geometry/Construction/Draw/TikZ.pm
 lib/Math/Geometry/Construction/FixedPoint.pm
 lib/Math/Geometry/Construction/Line.pm
 lib/Math/Geometry/Construction/Point.pm
-lib/Math/Geometry/Construction/Role/ImplicitPoint.pm
+lib/Math/Geometry/Construction/Role/Buffering.pm
+lib/Math/Geometry/Construction/Role/Input.pm
 lib/Math/Geometry/Construction/Role/Object.pm
 lib/Math/Geometry/Construction/Role/Output.pm
 lib/Math/Geometry/Construction/Role/PointSet.pm
 lib/Math/Geometry/Construction/Role/PositionSelection.pm
-lib/Math/Geometry/Construction/Role/VectorFormats.pm
 t/000_load.t
 t/005_setup.t
 t/010_point.t
@@ -45,6 +45,7 @@ t/075_translated_point.t
 t/080_point_on_line.t
 t/200_style.t
 t/250_transforms.t
+t/260_buffering.t
 t/700_boilerplate.t
 t/705_manifest.t
 t/release-pod-coverage.t
