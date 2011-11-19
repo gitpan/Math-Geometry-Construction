@@ -2,6 +2,7 @@ package Math::Geometry::Construction;
 
 use 5.008008;
 
+use Math::Geometry::Construction::Types qw(HashRefOfGeometricObject Draw);
 use Carp;
 use Moose;
 use Math::Vector::Real 0.03;
@@ -15,11 +16,11 @@ C<Math::Geometry::Construction> - intersecting lines and circles
 
 =head1 VERSION
 
-Version 0.018
+Version 0.019
 
 =cut
 
-our $VERSION = '0.018';
+our $VERSION = '0.019';
 
 
 ###########################################################################
@@ -31,7 +32,7 @@ our $VERSION = '0.018';
 has 'background'     => (isa => 'Str|ArrayRef',
 			 is  => 'rw');
 
-has 'objects'        => (isa     => 'HashRef[Item]',
+has 'objects'        => (isa     => HashRefOfGeometricObject,
 			 is      => 'bare',
 			 traits  => ['Hash'],
 			 default => sub { {} },
@@ -50,7 +51,7 @@ has 'buffer_results' => (isa     => 'Bool',
 			 default => 1,
 			 trigger => \&clear_buffer);
 
-has '_output'        => (isa     => 'Item',
+has '_output'        => (isa     => Draw,
 			 is      => 'rw',
 			 handles => {draw_line   => 'line',
 				     draw_circle => 'circle',

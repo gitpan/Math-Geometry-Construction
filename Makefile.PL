@@ -12,11 +12,8 @@ my %WriteMakefileArgs = (
   "ABSTRACT" => "intersecting lines and circles",
   "AUTHOR" => "Lutz Gehlen <perl\@lutzgehlen.de>",
   "BUILD_REQUIRES" => {
-    "Math::VectorReal" => 0,
     "Test::Exception" => 0,
-    "Test::More" => 0,
-    "strict" => 0,
-    "warnings" => 0
+    "Test::More" => 0
   },
   "CONFIGURE_REQUIRES" => {
     "ExtUtils::MakeMaker" => "6.30"
@@ -32,13 +29,18 @@ my %WriteMakefileArgs = (
     "List::Util" => 0,
     "Math::MatrixReal" => 0,
     "Math::Vector::Real" => "0.03",
+    "Math::VectorReal" => 0,
     "Moose" => 0,
     "Moose::Role" => 0,
+    "MooseX::Types" => 0,
+    "MooseX::Types::Moose" => 0,
     "Params::Validate" => 0,
     "SVG" => 0,
-    "Scalar::Util" => 0
+    "Scalar::Util" => 0,
+    "strict" => 0,
+    "warnings" => 0
   },
-  "VERSION" => "0.018",
+  "VERSION" => "0.019",
   "test" => {
     "TESTS" => "t/*.t"
   }
