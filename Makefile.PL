@@ -13,7 +13,8 @@ my %WriteMakefileArgs = (
   "AUTHOR" => "Lutz Gehlen <perl\@lutzgehlen.de>",
   "BUILD_REQUIRES" => {
     "Test::Exception" => 0,
-    "Test::More" => 0
+    "Test::More" => 0,
+    "Test::Warn" => 0
   },
   "CONFIGURE_REQUIRES" => {
     "ExtUtils::MakeMaker" => "6.30"
@@ -37,10 +38,11 @@ my %WriteMakefileArgs = (
     "Params::Validate" => 0,
     "SVG" => 0,
     "Scalar::Util" => 0,
+    "overload" => 0,
     "strict" => 0,
     "warnings" => 0
   },
-  "VERSION" => "0.019",
+  "VERSION" => "0.020",
   "test" => {
     "TESTS" => "t/*.t"
   }
