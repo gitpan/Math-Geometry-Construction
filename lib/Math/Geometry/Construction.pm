@@ -16,11 +16,11 @@ C<Math::Geometry::Construction> - intersecting lines and circles
 
 =head1 VERSION
 
-Version 0.020
+Version 0.022
 
 =cut
 
-our $VERSION = '0.020';
+our $VERSION = '0.022';
 
 
 ###########################################################################
@@ -29,33 +29,40 @@ our $VERSION = '0.020';
 #                                                                         #
 ###########################################################################
 
-has 'background'     => (isa => 'Str|ArrayRef',
-			 is  => 'rw');
+has 'background'      => (isa => 'Str|ArrayRef',
+			  is  => 'rw');
 
-has 'objects'        => (isa     => HashRefOfGeometricObject,
-			 is      => 'bare',
-			 traits  => ['Hash'],
-			 default => sub { {} },
-			 handles => {count_objects => 'count',
-				     object        => 'accessor',
-				     object_ids    => 'keys',
-				     objects       => 'values'});
+has 'objects'         => (isa     => HashRefOfGeometricObject,
+			  is      => 'bare',
+			  traits  => ['Hash'],
+			  default => sub { {} },
+			  handles => {count_objects => 'count',
+				      object        => 'accessor',
+				      object_ids    => 'keys',
+				      objects       => 'values'});
 
-has 'point_size'     => (isa     => 'Num',
-			 is      => 'rw',
-			 default => 6);
+has 'point_size'      => (isa     => 'Num',
+			  is      => 'rw',
+			  default => 6);
 
+has 'partial_circles' => (isa     => 'Bool',
+			  is      => 'ro',
+			  default => 0);
 
-has 'buffer_results' => (isa     => 'Bool',
-			 is      => 'rw',
-			 default => 1,
-			 trigger => \&clear_buffer);
+has 'min_circle_gap'  => (isa     => 'Num',
+			  is      => 'ro',
+			  default => 1.5707963267949);
 
-has '_output'        => (isa     => Draw,
-			 is      => 'rw',
-			 handles => {draw_line   => 'line',
-				     draw_circle => 'circle',
-				     draw_text   => 'text'});
+has 'buffer_results'  => (isa     => 'Bool',
+			  is      => 'rw',
+			  default => 1,
+			  trigger => \&clear_buffer);
+
+has '_output'         => (isa     => Draw,
+			  is      => 'rw',
+			  handles => {draw_line   => 'line',
+				      draw_circle => 'circle',
+				      draw_text   => 'text'});
 
 sub clear_buffer {
     my ($self) = @_;
@@ -837,7 +844,7 @@ Lutz Gehlen, C<< <perl at lutzgehlen.de> >>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2011-2012 Lutz Gehlen.
+Copyright 2011-2013 Lutz Gehlen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
@@ -846,4 +853,3 @@ by the Free Software Foundation; or the Artistic License.
 See http://dev.perl.org/licenses/ for more information.
 
 =cut
-

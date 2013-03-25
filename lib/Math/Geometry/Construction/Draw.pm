@@ -11,11 +11,11 @@ C<Math::Geometry::Construction::Draw> - base class for drawing
 
 =head1 VERSION
 
-Version 0.018
+Version 0.022
 
 =cut
 
-our $VERSION = '0.018';
+our $VERSION = '0.022';
 
 
 ###########################################################################
@@ -48,6 +48,13 @@ has 'transform'         => (isa      => 'ArrayRef[Num]',
 #                            Generate Output                              #
 #                                                                         #
 ###########################################################################
+
+sub is_flipped {
+    my ($self) = @_;
+    my $t      = $self->transform;
+
+    return($t->[0] * $t->[3] - $t->[1] * $t->[2] <= 0 ? 1 : 0);
+}
 
 sub transform_coordinates {
     my ($self, $x, $y) = @_;
@@ -101,6 +108,16 @@ __END__
 
 =head2 Methods for Subclass Developers
 
+=head3 is_flipped
+
+Returns the sign of the transformation matrix.
+
+=head3 transform_coordinates
+
+=head3 transform_x_length
+
+=head3 transform_y_length
+
 =head3 create_derived_point
 
 =head3 as_svg
@@ -115,7 +132,7 @@ Lutz Gehlen, C<< <perl at lutzgehlen.de> >>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2011 Lutz Gehlen.
+Copyright 2011, 2013 Lutz Gehlen.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published

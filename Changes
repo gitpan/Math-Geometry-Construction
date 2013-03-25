@@ -1,5 +1,15 @@
 Revision history for Math-Geometry-Construction
 
+0.022	 Mon Mar 25 17:27:04 CET 2013
+	 Fixed test suite to work with perl 5.17.
+
+0.021	 Fri Mar 22 17:49:50 CET 2013 (unpublished)
+	 - extreme_position selector accepts Line objects as
+           direction
+	 - support for setting dash patterns in a unified way for SVG
+	   and TikZ output
+	 - partial drawing of circles
+
 0.020	 Sat Jan  7 15:36:16 NZDT 2012
 	 - The extend attribute is turned into an array reference
 	   with backward and forward extent. When setting the
