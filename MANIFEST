@@ -17,6 +17,7 @@ lib/Math/Geometry/Construction/Derivate.pm
 lib/Math/Geometry/Construction/Derivate/IntersectionCircleCircle.pm
 lib/Math/Geometry/Construction/Derivate/IntersectionCircleLine.pm
 lib/Math/Geometry/Construction/Derivate/IntersectionLineLine.pm
+lib/Math/Geometry/Construction/Derivate/PointOnCircle.pm
 lib/Math/Geometry/Construction/Derivate/PointOnLine.pm
 lib/Math/Geometry/Construction/Derivate/TranslatedPoint.pm
 lib/Math/Geometry/Construction/DerivedPoint.pm
@@ -45,6 +46,7 @@ t/065_circle_circle.t
 t/070_position_selectors.t
 t/075_translated_point.t
 t/080_point_on_line.t
+t/085_point_on_circle.t
 t/200_style.t
 t/250_transforms.t
 t/260_buffering.t
